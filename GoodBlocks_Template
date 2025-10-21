@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoodBlock: Skill Mastery in 10 Minutes</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Font Awesome for universal icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLMDJzL/gJ29dF78JkR0/hYQ7z8tB8b8/fQJz0Fh0E0w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* Allgood Academy Brand Colors and Typography */
+        :root {
+            --brand-primary: #D34716; /* Burnt Orange (Used for Buttons/Progress) */
+            --brand-secondary: #357889; /* Deep Cyan (Used for Header BG) */
+            /* --brand-accent-light removed, now using white for contrast */
+            --text-primary: #4C4C4C; /* Dark Gray */
+            --text-secondary: #757575; /* Medium Gray */
+            --bg-light: #F7F7F7; /* Very Light Gray */
+        }
+
+        /* Custom styles for Allgood Academy aesthetic and responsiveness */
+        body {
+            /* Verdana for on-screen readability (Body, Captions, Lists) */
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+            color: var(--text-primary);
+            background-color: var(--bg-light);
+            overflow-x: hidden;
+        }
+
+        /* New style for the main GoodBlock container (3D effect/glow) */
+        .course-app-style {
+            border: 2px solid var(--brand-primary); /* Existing primary border */
+            /* Adding a deep drop shadow for 3D lift and a subtle burnt orange glow */
+            box-shadow: 
+                0 12px 20px -8px rgba(0, 0, 0, 0.25), /* Deeper black shadow for 3D pop */
+                0 0 12px 2px rgba(211, 71, 22, 0.45); /* Burnt Orange glow (D34716) */
+        }
+
+        /* Georgia for authority and professionalism (Headlines) */
+        .font-georgia {
+            font-family: Georgia, ui-serif, Cambria, "Times New Roman", Times, serif;
+        }
+
+        /* Utility classes for button styling */
+        .btn-primary {
+            background-color: var(--brand-primary);
+            color: white;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-primary:hover {
+            background-color: #A03810; /* Darker Orange */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn-secondary {
+            background-color: white;
+            color: var(--text-primary);
+            border: 1px solid var(--brand-primary); /* Border in Brand Primary */
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-secondary:hover {
+            background-color: #f3f4f6;
+        }
+        
+        /* Custom progress bar styles - UPDATED for oval shape and visibility */
+        #progress-bar {
+            height: 10px; /* Define the height for the small bar */
+            background-color: #e5e7eb; /* Light gray color for the track */
+            border-radius: 5px; /* Creates the rounded/oval shape */
+            overflow: hidden; /* Ensures the fill color respects the rounded edges */
+        }
+        
+        #progress-bar-fill {
+            height: 100%;
+            background-color: var(--brand-primary); /* Burnt Orange fill */
+            transition: width 0.3s ease;
+        }
+        
+        /* Custom card styling for content highlights (formerly 'driver-card') */
+        .goodblock-card {
+            background-color: #ffffff;
+            /* Default: Deep Cyan border */
+            border-left: 5px solid var(--brand-secondary);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            /* UPDATED: More pronounced shadow for better definition */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08); 
+            cursor: default; 
+        }
+        .goodblock-card.primary {
+            /* Primary: Burnt Orange border for key actions/stats */
+            border-left: 5px solid var(--brand-primary); 
+        }
+        
+        /* Style for the restart icon (Font Awesome) - Now uses White for high contrast */
+        .header-icon-btn {
+            background-color: transparent;
+            border: 1px solid #ffffff; /* White border */
+            transition: all 0.2s ease;
+        }
+        .header-icon-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2); /* Subtle transparent white background on hover */
+        }
+        .header-icon-btn i {
+            color: #ffffff; /* White icon color */
+        }
+        .header-icon-btn:hover i {
+            color: #ffffff; 
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <!-- Updated: Using new 'course-app-style' class for border, shadow, and glow -->
+    <div id="course-app" class="max-w-6xl mx-auto bg-white rounded-xl min-h-[600px] flex flex-col course-app-style">
+        
+        <!-- Header: Uses Deep Cyan #357889 (var(--brand-secondary)) and Georgia font -->
+        <header class="p-6 rounded-t-xl text-white flex justify-between items-center" style="background-color: var(--brand-secondary);">
+            <!-- Skill Name Placeholder is now dynamically updated by JS -->
+            <h1 class="text-3xl font-bold tracking-tight font-georgia">GoodBlock: <span>[Skill Name Placeholder]</span></h1>
+            
+            <!-- Global Icons (Navigation Menu and Restart) -->
+            <div class="flex items-center space-x-2">
+                <!-- Global Navigation Menu Button (Icon) -->
+                <button id="menu-button" class="p-2 rounded-full transition-colors hidden md:block header-icon-btn" onclick="toggleNavigationMenu()" aria-label="Open Navigation Menu">
+                    <i class="fas fa-bars fa-lg"></i>
+                </button>
+
+                <!-- Global Restart Button (Icon) - REMOVED md:block to ensure JS controls visibility -->
+                <button id="restart-button" class="p-2 rounded-full transition-colors hidden header-icon-btn" onclick="restartLearnable()" aria-label="Restart GoodBlock">
+                    <i class="fas fa-home fa-lg"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Progress Bar (Top Divider: border-gray-200) -->
+        <div class="p-4 border-b border-gray-200 bg-gray-100">
+            <div id="progress-bar">
+                <div id="progress-bar-fill" style="width: 0%;"></div>
+            </div>
+        </div>
+
+        <!-- Main Content Area: Removed flex-col justify-between because buttons moved out -->
+        <main class="flex-grow p-6 sm:p-8">
+            
+            <!-- Content Container - Dynamically updated by JS -->
+            <div id="content-container" class="transition-opacity duration-300">
+                <!-- Content will be injected here -->
+            </div>
+            
+            <!-- Removed the bottom separator and navigation bar from this section -->
+
+        </main>
+        
+        <!-- NEW NAVIGATION STRIP (Matches Progress Bar Shading) -->
+        <div id="navigation-strip" class="p-4 bg-gray-100 border-t border-gray-200">
+            <!-- The inner container ensures the content respects the app's implicit max width/center alignment -->
+            <div id="navigation-bar" class="flex justify-between">
+                <button id="back-button" class="px-6 py-2 rounded-lg font-semibold btn-secondary" onclick="navigate(-1)">Back</button>
+                <button id="next-button" class="px-6 py-2 rounded-lg font-semibold btn-primary" onclick="navigate(1)">Start</button>
+            </div>
+        </div>
+        
+        <!-- Footer: Now uses Deep Cyan background, White text -->
+        <footer class="p-4 text-center text-sm rounded-b-xl text-white" style="background-color: var(--brand-secondary);">
+            <!-- GoodBlock text now inherits white from footer to ensure visibility -->
+            <strong class="text-white">GoodBlock</strong>. Active Learning Powered by the 
+            <!-- Allgood and Academy are now white for high contrast -->
+            <a href="https://www.allgoodacademy.com" target="_blank" class="font-semibold transition-colors text-white">
+                Allgood <span class="text-white">Academy</span>
+            </a>.
+        </footer>
+
+    </div>
+
+    <!-- Image Modal for Full-Screen View (No changes needed, functionality remains) -->
+    <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-80 z-50 flex justify-center items-center hidden transition-opacity duration-300" onclick="closeImageModal()">
+        <div class="relative max-w-[80vw] md:max-w-[60vw] lg:max-w-[60vw] max-h-[90vh] p-4" onclick="event.stopPropagation()">
+            <button class="absolute -top-6 right-0 text-white text-4xl font-light opacity-75 hover:opacity-100 transition-opacity" onclick="closeImageModal()">&times;</button>
+            <img id="modal-image-content" src="" alt="Expanded View" 
+                class="max-w-full max-h-full rounded-lg cursor-pointer transform transition-transform duration-300 object-contain" 
+                onclick="closeImageModal()">
+            <p class="text-white text-center mt-2 text-sm">Click image or 'X' to close</p>
+        </div>
+    </div>
+
+    <!-- Navigation Slide-in Panel/Modal (No changes needed, functionality remains) -->
+    <div id="navigation-modal" class="fixed inset-0 bg-black bg-opacity-70 z-40 flex justify-end items-start hidden transition-opacity duration-300" onclick="toggleNavigationMenu()">
+        <div class="w-full max-w-[280px] h-full bg-white shadow-2xl p-6 overflow-y-auto transform transition-transform duration-300 translate-x-full" id="navigation-panel" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center pb-4 border-b border-gray-200" style="color: var(--text-primary);">
+                <h3 class="text-xl font-bold">Jump To Topic</h3>
+                <button class="text-3xl font-light text-gray-500 hover:text-red-500 transition-colors" onclick="toggleNavigationMenu()">&times;</button>
+            </div>
+            <div id="topic-list" class="mt-4 space-y-2">
+                <!-- Topics will be dynamically inserted here by renderNavigationMenu() -->
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        let currentStep = 0;
+        // Total steps for content progress calculation (0 to 11 inclusive = 12 steps total)
+        const totalContentSteps = 11; 
+
+        const contentContainer = document.getElementById('content-container');
+        const backButton = document.getElementById('back-button');
+        const nextButton = document.getElementById('next-button');
+        const progressBarFill = document.getElementById('progress-bar-fill');
+        const restartButton = document.getElementById('restart-button');
+
+        // --- NEW: Dynamic Content Configuration (Single Source of Truth) ---
+        const goodBlockConfig = {
+            topicName: "Digital Distraction Triage", // Used in the welcome screen body
+            skillName: "Triage Your Focus",       // Used in the main header (GoodBlock: Triage Your Focus)
+            objectives: "Identify and eliminate one high-leverage digital distraction.", // Used in the welcome screen body
+        };
+        // --- END NEW CONFIG ---
+        
+        // --- Navigation Menu Functions ---
+        
+        function toggleNavigationMenu() {
+            const modal = document.getElementById('navigation-modal');
+            const panel = document.getElementById('navigation-panel');
+            
+            // Toggle visibility
+            if (modal.classList.contains('hidden')) {
+                // OPEN: Ensure topics are rendered, then show modal and slide in panel
+                renderNavigationMenu();
+                modal.classList.remove('hidden');
+                // Delay transform removal to allow opacity transition
+                setTimeout(() => {
+                    panel.classList.remove('translate-x-full');
+                    document.body.style.overflow = 'hidden';
+                }, 10);
+            } else {
+                // CLOSE: Start slide-out animation
+                panel.classList.add('translate-x-full');
+                document.body.style.overflow = 'auto';
+                // Delay hiding the modal until transition is done (300ms)
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+        }
+        
+        function goToStep(index) {
+            currentStep = index;
+            renderStep();
+            toggleNavigationMenu(); // Close the menu after navigation
+        }
+
+        function renderNavigationMenu() {
+            const topicList = document.getElementById('topic-list');
+            topicList.innerHTML = ''; // Clear existing list
+
+            // Map each step to a navigable button
+            courseSteps.forEach((step, index) => {
+                let menuTitle = step.title;
+                let isSpecial = (index === 0 || index === courseSteps.length - 1);
+                
+                // Custom names for special screens in the menu
+                if (index === 0) menuTitle = "1. Welcome & Start";
+                if (index === courseSteps.length - 1) menuTitle = "Conclusion & Restart";
+
+                // Determine styling based on current step and type
+                const style = isSpecial ? 'font-bold text-base' : 'text-base';
+                // Using Brand Primary color for current step highlight
+                const color = currentStep === index ? 'var(--brand-primary)' : 'var(--text-primary)';
+                const weight = currentStep === index ? 'font-extrabold' : 'font-semibold';
+
+                const listItem = document.createElement('button');
+                listItem.className = `w-full text-left p-3 rounded-lg hover:bg-gray-100 transition-colors ${style}`;
+                
+                listItem.innerHTML = `<span class="${weight}" style="color: ${color}">${menuTitle}</span>`;
+                listItem.onclick = () => goToStep(index);
+
+                topicList.appendChild(listItem);
+            });
+        }
+
+        // --- Image Modal Functions (No changes needed) ---
+        
+        function openImageModal(src) {
+            const modal = document.getElementById('image-modal');
+            const modalImage = document.getElementById('modal-image-content');
+            modalImage.src = src;
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; 
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('image-modal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto'; 
+        }
+
+        // Define all course steps - *** UPDATED TO ALLGOOD ACADEMY BRANDING ***
+        const courseSteps = [
+            // STEP 0: Welcome Screen (Start Page) - Updated with Logo
+            { 
+                // Removed the title here to eliminate the redundant text above the logo
+                title: "", 
+                // Updated: Used {{placeholders}} for dynamic content injection from goodBlockConfig
+                body: `<div class="flex flex-col items-center justify-center text-center h-[400px]">
+                        <!-- New Allgood Academy Logo -->
+                        <img src="https://i.ibb.co/3yvdN59b/Horizontal-Logo.png" alt="Allgood Academy Logo" class="w-2/3 max-w-xs mb-6 mx-auto">
+                        
+                        <!-- Title: Welcome to the [Topic] GoodBlock. 'Welcome to the' is now Deep Cyan. -->
+                        <h2 class="text-3xl font-bold font-georgia text-gray-800">
+                            <span style="color: var(--brand-secondary);">Welcome to the</span> <span style="color: var(--brand-secondary);">{{topic}}</span> <span style="color: var(--brand-primary);">GoodBlock</span>
+                        </h2>
+                        
+                        <!-- Mission Statement: turning passive learning into pragmatic action -->
+                        <p class="mt-3 text-lg text-gray-600">Our mission: turning <strong style="color: var(--brand-primary);">passive learning</strong> into <strong style="color: var(--brand-secondary);">pragmatic action</strong>.</p>
+                        
+                        <!-- Learning Objective: Learn how to [Objectives] -->
+                        <p class="mt-2 text-md font-semibold" style="color: var(--brand-secondary);">
+                            Learn how to: {{objectives}}
+                        </p>
+                       </div>`,
+                hideBack: true,
+                nextText: "Start"
+            },
+            // STEP 1: Learnable Introduction - Generic
+            { 
+                title: "Section 1: Introduction to Core Concepts", 
+                body: `<p class="text-gray-700">This GoodBlock explains the setup and utilization of **High-Leverage Micro-Skills**. It will walk you through the theoretical foundation (<strong>"the why"</strong>) and the practical, actionable steps (<strong>"the how"</strong>) to ensure you leave ready to implement what you've learned.</p>`,
+            },
+            // STEP 2: Topic 1.1: What is a Driver? -> Defining the Core Metric
+            { 
+                title: "Topic 1.1: Defining the Core Action", 
+                body: `<h3 class="text-xl font-semibold mb-3 font-georgia" style="color: var(--brand-secondary);">In this module...</h3>
+                       <p class="text-gray-700">A **"Core Action"** is the single, measurable step that leads to a real-world result. We focus on low-friction actions that are **immediately useful** and **low-cost** to implement.</p>
+                       <ul class="mt-4 list-disc list-inside space-y-2 text-gray-700 pl-4">
+                            <li>Instead of learning a whole concept, you focus on the **minimum viable action** required for immediate progress.</li>
+                            <li>For example, instead of "Learn financial literacy," the action is: **"Track one unnecessary subscription."**</li>
+                        </ul>
+                        <p class="mt-4 italic text-sm text-gray-600">This ensures your learning always ends with a tangible output, embodying the 'One Thing' principle.</p>`,
+            },
+            // STEP 3: 1.2 Why Use Drivers? -> Benefits
+            { 
+                title: "Topic 1.2: Benefits of the GoodBlock Approach", 
+                body: `<div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-700">
+                        <div>
+                            <p class="font-bold mb-1" style="color: var(--brand-secondary);">Tangible Results</p>
+                            <p>Every lesson guarantees a measurable, visible output you can use right away (a draft, a formula, a deleted file).</p>
+                        </div>
+                        <div>
+                            <p class="font-bold mb-1" style="color: var(--brand-secondary);">Low-Friction Execution</p>
+                            <p>The time commitment is short (10-15 minutes), overcoming the biggest barrier to learning: finding the time to start.</p>
+                        </div>
+                        <div>
+                            <p class="font-bold mb-1" style="color: var(--brand-secondary);">Focus Mastery</p>
+                            <p>By focusing on one single task, you master a component without the cognitive overload of a full course.</p>
+                        </div>
+                        <div>
+                            <p class="font-bold mb-1" style="color: var(--brand-secondary);">Immediate Momentum</p>
+                            <p>Completion of the action creates a sense of accomplishment, building momentum for the next lesson or challenge.</p>
+                        </div>
+                    </div>`,
+            },
+            // STEP 4: Topic 2.1: Locating the Setup Screen - Accordions with generic text/image
+            { 
+                title: "Topic 2.1: Locating the Core Action Point", 
+                body: `<p class="text-gray-700 mb-6">Every effective action starts with an honest assessment of the problem. We call this the **[Check-In]** phase. Expand the sections below for details on how to diagnose where to start.</p>
+                        
+                        <div class="space-y-4">
+                            <!-- ACCORDION 1: Diagnosis -->
+                            <div class="goodblock-card p-4">
+                                <button class="accordion-header flex justify-between w-full text-left items-center" data-target="step4-content-1">
+                                    <div>
+                                        <h4 class="font-bold text-lg mb-0" style="color: var(--brand-secondary);">Diagnosis: Finding the Starting Point</h4>
+                                    </div>
+                                    <span class="accordion-icon transition-transform duration-300 text-gray-400">▼</span>
+                                </button>
+                                <div id="step4-content-1" class="accordion-content hidden pt-4 mt-4 border-t border-gray-100">
+                                    <p class="text-sm text-gray-700 mb-4">You cannot fix a problem you haven't defined. The first step is always to locate the single biggest pain point in the area you are trying to improve (e.g., three tasks that took too long, one email you avoided).</p>
+                                    <!-- Embedded Thumbnail Image - Placeholder -->
+                                    <img src="https://placehold.co/400x200/4C4C4C/FFFFFF?text=Start+Point+Assessment" 
+                                        alt="Placeholder Image: Assessment Diagram"
+                                        class="w-32 h-auto cursor-pointer rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200"
+                                        onclick="openImageModal(this.src)">
+                                    <p class="text-xs text-gray-500 mt-2 italic">Click image to expand view. **(Always replace with a relevant screenshot/diagram.)**</p>
+                                </div>
+                            </div>
+
+                            <!-- ACCORDION 2: Best Practice: High-Leverage vs. Low-Cost -->
+                            <div class="goodblock-card primary p-4">
+                                <button class="accordion-header flex justify-between w-full text-left items-center" data-target="step4-content-2">
+                                    <div>
+                                        <h4 class="font-bold text-lg mb-0" style="color: var(--brand-primary);">Best Practice: Maximize Leverage</h4>
+                                    </div>
+                                    <span class="accordion-icon transition-transform duration-300 text-gray-400">▼</span>
+                            </button>
+                                <div id="step4-content-2" class="accordion-content hidden pt-4 mt-4 border-t border-gray-100">
+                                    <p class="text-sm text-gray-700">Prioritize actions that, once completed, will save you significant time in the future. Example: Learning a keyboard shortcut is a high-leverage action because the 10 minutes spent learning it saves you hours over a lifetime.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="mt-6 text-lg font-semibold" style="color: var(--brand-secondary);">Once you've identified the starting point, we move to the three execution steps.</p>`,
+            },
+            // STEP 5: Topic 2.2: The Three Configuration Fields - Generic
+            { 
+                title: "Topic 2.2: The Three Execution Steps", 
+                body: `<p class="mb-4 text-gray-700">Execution is defined across three key steps: **Step 1 (The Trigger)**, **Step 2 (The Script)**, and **Step 3 (The Habit)**.</p>
+                       <p class="text-lg font-semibold" style="color: var(--brand-secondary);">We will now walk through the configuration of these three steps sequentially.</p>`,
+            },
+            // STEP 6: Step 1: Configure Field 1 (The Foundation) - Generic
+            { 
+                title: "Step 1: Define the Trigger (The Foundation)", 
+                body: `<p class="text-gray-700 mb-4">The **Trigger** is the external event or internal feeling that initiates the desired new action. **You must define the trigger before you can replace the old bad habit with a new good one.**</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- A. Time Trigger -->
+                            <div class="p-3 border-l-4 rounded bg-gray-50" style="border-color: var(--brand-secondary);">
+                                <h4 class="font-bold mb-1" style="color: var(--brand-secondary);">A. Time Trigger</h4>
+                                <p class="text-sm text-gray-700">Action tied to a specific time (e.g., "At 8:00 AM, I check my MIT.").</p>
+                            </div>
+                            <!-- B. Event Trigger -->
+                            <div class="p-3 border-l-4 rounded bg-gray-50" style="border-color: var(--brand-primary);">
+                                <h4 class="font-bold mb-1" style="color: var(--brand-primary);">B. Event Trigger</h4>
+                                <p class="text-sm text-gray-700">Action tied to another action (e.g., "After I brush my teeth, I drink a glass of water.").</p>
+                            </div>
+                            <!-- C. Emotional Trigger -->
+                            <div class="p-3 border-l-4 rounded bg-gray-50" style="border-color: var(--brand-secondary);">
+                                <h4 class="font-bold mb-1" style="color: var(--brand-secondary);">C. Emotional Trigger</h4>
+                                <p class="text-sm text-gray-700">Action tied to a feeling (e.g., "When I feel overwhelmed, I use the 4-7-8 breathing technique.").</p>
+                            </div>
+                            <!-- D. Pitfall (Multi-Trigger) -->
+                            <div class="p-3 border-l-4 border-red-500 bg-red-50 rounded">
+                                <h4 class="font-bold text-red-700 mb-1">D. Pitfall: Too Many Triggers</h4>
+                                <p class="text-sm text-red-600">⚠️ **Recommendation:** Start with **one single, specific trigger**. Complexity kills new habits. Keep it simple and focused.</p>
+                            </div>
+                        </div>`,
+            },
+            // STEP 7: Step 2: Assign Field 2 (The Input Source) - Generic
+            { 
+                title: "Step 2: Write the Script (The Action)", 
+                body: `<p class="text-gray-700 mb-4">The **Script** is the pre-written, atomic action you take once the Trigger occurs. It removes the need for decision-making or willpower.</p>
+                       <ol class="list-decimal list-inside space-y-2 text-gray-700 pl-4">
+                           <li>Identify the problem you are solving (e.g., procrastination on email).</li>
+                           <li>Write the smallest possible counter-script (e.g., **"I will only write the subject line, nothing more."**).<br><br><em class="italic">The script must be so small it is almost impossible to fail. This guarantees momentum.</em></li>
+                       </ol>
+                       <div class="mt-4 p-3 bg-red-100 border border-red-300 text-red-800 rounded-lg text-sm font-medium">
+                           <strong>Rule of Failure:</strong> If you miss the action, your script was too big. Break it down until it only takes **2 minutes or less**.
+                       </div>`,
+            },
+            // STEP 8: Step 3: Define Field 3 (Mode Selection) - Generic
+            { 
+                title: "Step 3: Track the Habit (The Feedback Loop)", 
+                body: `<p class="text-gray-700 mb-4">This final step ensures the action sticks. By tracking its frequency, you move the action from a chore to a **measurable system**.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- STATISTIC -->
+                            <div class="p-4 border border-gray-300 rounded-lg">
+                                <h4 class="font-bold text-xl mb-2" style="color: var(--brand-secondary);">The # (Quantity)</h4>
+                                <p class="text-sm text-gray-700">Track the **number** of times you successfully executed the script when the trigger occurred.</p>
+                                <p class="mt-2 text-xs italic text-gray-500">Example: Track the *number* of times you successfully applied the Two-Minute Rule this week.</p>
+                            </div>
+                            <!-- AMOUNT -->
+                            <div class="p-4 border border-gray-300 rounded-lg">
+                                <h4 class="font-bold text-xl mb-2" style="color: var(--brand-primary);">The $ (Value)</h4>
+                                <p class="text-sm text-gray-700">Track the **value** or positive outcome of the action.</p>
+                                <p class="mt-2 text-xs italic text-gray-500">Example: Track the *value* of the subscription you successfully cancelled using the Subscription Triage Script.</p>
+                            </div>
+                            <div class="p-4 border border-gray-300 rounded-lg col-span-2">
+                                <h4 class="font-bold text-lg mb-1" style="color: var(--text-primary);">The Completion Checkmark</h4>
+                                <p class="text-sm text-gray-700">For micro-actions, the **simplest metric is often best**: Did you do it today? Yes/No.</p>
+                            </div>
+                        </div>
+                        <p class="mt-6 text-gray-700 font-medium">By defining your Trigger, Script, and Track method, you create a complete loop for a new habit.</p>`,
+            },
+            // STEP 9: Topic 3: Common Metric Examples - Generic Accordions
+            {
+                title: "Topic 3: High-Leverage Script Examples",
+                body: `<p class="text-gray-700 mb-6">Review common action-oriented scripts that align with the Digital Decisions Challenge failure points. Click on any block to view the full details.</p>
+
+                    <div class="space-y-4">
+                        <!-- Script A: I-Statement Script (Conflict) -->
+                        <div class="goodblock-card p-4">
+                            <button class="accordion-header flex justify-between w-full text-left items-center" data-target="driver-content-1">
+                                <div>
+                                    <h4 class="font-bold text-lg mb-0" style="color: var(--brand-secondary);">Script A: The "I Feel" Conflict Script</h4>
+                                    <p class="text-sm text-gray-600">The immediate response for emotional digital conflicts.</p>
+                                </div>
+                                <span class="accordion-icon transition-transform duration-300 text-gray-400">▼</span>
+                            </button>
+                            <div id="driver-content-1" class="accordion-content hidden pt-4 mt-4 border-t border-gray-100">
+                                <p class="mt-2 font-medium text-sm text-gray-700">Structure: "I feel **[Feeling]** when you **[Action]** because **[Reason]**."</p>
+                                <ul class="list-disc list-inside text-xs text-gray-700 pl-3">
+                                    <li>Action: Drafting the single message, not sending it.</li>
+                                    <li>Trigger: Feeling the urge to send an angry response.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Script B: Password Formula (Security) -->
+                        <div class="goodblock-card primary p-4">
+                            <button class="accordion-header flex justify-between w-full text-left items-center" data-target="driver-content-2">
+                                <div>
+                                    <h4 class="font-bold text-lg mb-0" style="color: var(--brand-primary);">Script B: The Password Formula</h4>
+                                    <p class="text-sm text-gray-600">Generating unique, complex passwords without a manager.</p>
+                                </div>
+                                <span class="accordion-icon transition-transform duration-300 text-gray-400">▼</span>
+                            </button>
+                            <div id="driver-content-2" class="accordion-content hidden pt-4 mt-4 border-t border-gray-100">
+                                <p class="mt-2 font-medium text-sm text-gray-700">Formula: **[Site Acronym]** + **[Fav Phrase Initial]** + **[Year]** + **[!or#]**</p>
+                                <ul class="list-disc list-inside text-xs text-gray-700 pl-3">
+                                    <li>Example: Amazon + My dog loves to run + 2025 + ! becomes: AmzMdltr25!</li>
+                                    <li>Action: Creating and saving this formula in a secure note.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Script C: BLUF (Communication) -->
+                        <div class="goodblock-card p-4">
+                            <button class="accordion-header flex justify-between w-full text-left items-center" data-target="driver-content-3">
+                                <div>
+                                    <h4 class="font-bold text-lg mb-0" style="color: var(--brand-secondary);">Script C: The BLUF Email Draft</h4>
+                                    <p class="text-sm text-gray-600">Bottom Line Up Front for professional communication.</p>
+                                </div>
+                                <span class="accordion-icon transition-transform duration-300 text-gray-400">▼</span>
+                            </button>
+                            <div id="driver-content-3" class="accordion-content hidden pt-4 mt-4 border-t border-gray-100">
+                                <p class="mt-2 font-medium text-sm text-gray-700">Structure: **Subject: [ACTION] Topic**. Body: 1. Conclusion/Ask. 2. Context. 3. Thank you.</p>
+                                <ul class="list-disc list-inside text-xs text-gray-700 pl-3">
+                                    <li>Action: Draft the subject line and the first sentence (the conclusion).</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>`,
+            },
+            // STEP 10: Topic 3.1: Custom Calculation Metrics - Generic
+            {
+                title: "Topic 3.1: The Final Action: Take the Step",
+                body: `<p class="text-gray-700 mb-6">Learning the script is not enough; you must **take the action now** to embed the habit. The real value is in the execution.</p>
+                        
+                        <div class="space-y-4">
+                            <!-- ACCORDION 1: Immediate Action -->
+                            <div class="goodblock-card p-4" style="border-left: 5px solid var(--brand-secondary);">
+                                <button class="accordion-header flex justify-between w-full text-left items-center" data-target="custom-driver-1">
+                                    <div>
+                                        <h4 class="font-bold text-lg mb-0" style="color: var(--brand-secondary);">Immediate Action</h4>
+                                    </div>
+                                    <span class="accordion-icon transition-transform duration-300 text-gray-400">▼</span>
+                                </button>
+                                <div id="custom-driver-1" class="accordion-content hidden pt-4 mt-4 border-t border-gray-100">
+                                    <p class="text-sm text-gray-700">Choose one new action (your Script) and **commit to doing it once today**. The goal is to break the inertia and move immediately from learning to implementation.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- ACCORDION 2: Accountability Check -->
+                            <div class="goodblock-card p-4 primary">
+                                <button class="accordion-header flex justify-between w-full text-left items-center" data-target="custom-driver-2">
+                                    <div>
+                                        <h4 class="font-bold text-lg mb-0" style="color: var(--brand-primary);">Accountability Check</h4>
+                                    </div>
+                                    <span class="accordion-icon transition-transform duration-300 text-gray-400">▼</span>
+                                </button>
+                                <div id="custom-driver-2" class="accordion-content hidden pt-4 mt-4 border-t border-gray-100">
+                                    <p class="text-sm text-gray-700 mb-3">To solidify the action, tell one person (friend, mentor, or even just yourself in a journal) what **Trigger** and **Script** you are practicing today.</p>
+                                </div>
+                            </div>
+                        </div>`,
+            },
+            // STEP 11: Learnable Conclusion / Finish Screen - Generic
+            { 
+                title: "GoodBlock Complete!", 
+                body: `<div class="text-center py-10">
+                           <h2 class="text-3xl font-bold font-georgia mb-4" style="color: var(--brand-primary);">You Took Action. That's the Goal.</h2>
+                           <p class="text-xl text-gray-700">You have completed this GoodBlock and defined a new Trigger, Script, and Track method for a high-leverage skill.</p>
+                           <p class="mt-4 text-gray-600 font-semibold">Remember: The value is in the **pragmatic action** that follows the lesson, not in the time you spent reading.</p>
+                       </div>`,
+                nextText: "Restart GoodBlock",
+            },
+        ];
+
+        // Function to restart the entire learnable guide
+        function restartLearnable() {
+            currentStep = 0;
+            renderStep();
+        }
+
+        // Function to set up accordion behavior on the relevant steps
+        function setupAccordions() {
+            document.querySelectorAll('.accordion-header').forEach(header => {
+                header.removeEventListener('click', toggleAccordion); // Prevent double-listening
+                header.addEventListener('click', toggleAccordion);
+            });
+        }
+
+        // --- UPDATED: Focused Accordion Logic ---
+        function toggleAccordion(event) {
+            const header = event.currentTarget;
+            const targetId = header.getAttribute('data-target');
+            const targetContent = document.getElementById(targetId);
+            const icon = header.querySelector('.accordion-icon');
+
+            // Close all other open accordions in this step for focused learning ("One Thing" principle)
+            document.querySelectorAll('.accordion-header').forEach(h => {
+                const content = document.getElementById(h.getAttribute('data-target'));
+                const otherIcon = h.querySelector('.accordion-icon');
+
+                // Close it if it's not the target and it is currently visible
+                if (content !== targetContent && !content.classList.contains('hidden')) {
+                    content.classList.add('hidden');
+                    otherIcon.style.transform = 'rotate(0deg)';
+                    h.parentElement.classList.remove('shadow-md');
+                }
+            });
+
+            // Toggle the clicked accordion
+            if (targetContent.classList.contains('hidden')) {
+                // Open the content
+                targetContent.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+                header.parentElement.classList.add('shadow-md');
+            } else {
+                // Close the content
+                targetContent.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+                header.parentElement.classList.remove('shadow-md');
+            }
+        }
+        // --- END UPDATED ACCORDION ---
+
+        // Function to render the current step
+        function renderStep() {
+            const stepData = courseSteps[currentStep];
+            const maxProgress = totalContentSteps;
+            const navBar = document.getElementById('navigation-bar'); // Reference the navigation bar
+            
+            // --- NEW: Dynamic Content Injection and Header Update ---
+            // 1. Update Main Header with Skill Name
+            document.querySelector('header h1 span').textContent = goodBlockConfig.skillName; 
+
+            let stepBody = stepData.body;
+            let stepTitle = stepData.title;
+
+            // 2. Inject Dynamic Content into Step 0 (Welcome Screen)
+            if (currentStep === 0) {
+                stepBody = stepBody.replace('{{topic}}', goodBlockConfig.topicName);
+                stepBody = stepBody.replace('{{objectives}}', goodBlockConfig.objectives);
+            }
+
+            // 3. Render Content
+            contentContainer.innerHTML = `
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 font-georgia">${stepTitle}</h2>
+                <div>${stepBody}</div>
+            `;
+            // --- END NEW DYNAMIC LOGIC ---
+            
+            // 4. Update Progress Bar
+            let progress = 0;
+            if (currentStep > 0 && currentStep <= maxProgress) {
+                // Calculate progress based on steps 1 through the final content step (index 11)
+                progress = ((currentStep) / maxProgress) * 100; 
+            } else if (currentStep === maxProgress) { // Final screen (index 11)
+                progress = 100;
+            }
+            progressBarFill.style.width = `${progress}%`;
+
+            // 5. Update Navigation Buttons
+            backButton.classList.remove('hidden');
+            nextButton.classList.remove('hidden');
+
+            // FIX: Control visibility of the Header Restart Button (Home Icon) cleanly
+            if (currentStep > 0) {
+                restartButton.classList.remove('hidden'); 
+            } else {
+                restartButton.classList.add('hidden'); 
+            }
+
+            // --- Navigation Bar (Footer) Button Logic ---
+            if (currentStep === 0) {
+                // Center the button when starting
+                navBar.classList.remove('justify-between');
+                navBar.classList.add('justify-center');
+                
+                backButton.classList.add('hidden');
+                nextButton.textContent = "Start GoodBlock";
+            } else if (currentStep === courseSteps.length - 1) { // Last step (index 11)
+                // Ensure buttons are spaced out for multi-step navigation
+                navBar.classList.remove('justify-center');
+                navBar.classList.add('justify-between');
+                
+                nextButton.textContent = "Restart GoodBlock";
+            } else {
+                // Ensure buttons are spaced out for multi-step navigation
+                navBar.classList.remove('justify-center');
+                navBar.classList.add('justify-between');
+                
+                nextButton.textContent = "Next";
+            }
+
+            if (currentStep > 0) {
+                backButton.textContent = "Back";
+            }
+            
+            // 6. Setup Accordion Listeners if on the right step
+            if (currentStep === 4 || currentStep === 9 || currentStep === 10) {
+                setTimeout(setupAccordions, 0); 
+            }
+        }
+
+        // Function to handle navigation
+        function navigate(direction) {
+            const lastStepIndex = courseSteps.length - 1;
+
+            if (currentStep === 0 && direction === 1) {
+                currentStep = 1; 
+            } else if (currentStep === lastStepIndex && direction === 1) {
+                // Handle restart from the conclusion page
+                restartLearnable();
+                return;
+            } else {
+                const newStep = currentStep + direction;
+                if (newStep >= 0 && newStep <= lastStepIndex) {
+                    currentStep = newStep;
+                }
+            }
+            renderStep();
+        }
+
+        // Initial render on load
+        document.addEventListener('DOMContentLoaded', renderStep);
+    </script>
+</body>
+</html>
