@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoodBlock: Mobile App Simulation</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Font Awesome for universal icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* Allgood Academy Brand Colors and Typography */
+        :root {
+            --brand-primary: #D34716; /* Burnt Orange (Buttons/Progress) */
+            --brand-secondary: #357889; /* Deep Cyan (Header BG) */
+            --text-primary: #4C4C4C; /* Dark Gray */
+            --text-secondary: #757575; /* Medium Gray */
+            --bg-light: #F7F7F7; /* Very Light Gray (Outer Background) */
+            --brand-hover-light: #EB8D69;
+        }
+
+        /* Base Typography */
+        h1, h2, h3 { font-family: Georgia, ui-serif, Cambria, "Times New Roman", Times, serif; }
+        body, p, li, a, button { font-family: Verdana, Geneva, Tahoma, sans-serif; }
+        
+        body {
+            background-color: var(--bg-light); /* Outer background */
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        /* --- MOBILE PHONE FRAME STYLES (PORTRAIT MODE DEFAULT) --- */
+        #mobile-frame {
+            /* Fixed dimensions to simulate a phone */
+            width: 400px; 
+            height: 700px;
+            /* Styling for the phone "bezel" */
+            background-color: #000000;
+            border: 10px solid #222; 
+            border-radius: 40px; 
+            box-shadow: 
+                0 20px 50px rgba(0, 0, 0, 0.5),
+                0 0 16px 4px rgba(211, 71, 22, 0.45); /* Subtle brand glow on frame */
+            position: relative;
+            overflow: hidden;
+            transition: all 0.6s ease; /* Transition time for width/height swap */
+            perspective: 1000px; /* Crucial for 3D effect */
+        }
+
+        /* --- LANDSCAPE MODE STYLES: Swap dimensions and change inner layout --- */
+        @media (min-width: 768px) {
+             #mobile-frame.landscape-mode {
+                width: 700px; /* New width is old height */
+                height: 400px; /* New height is old width */
+                max-width: none;
+            }
+        }
+        
+        /* --- 3D FLIPPER STYLES --- */
+        #phone-flipper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s; /* Rotation speed */
+            transform-style: preserve-3d; /* Key for children to exist in 3D space */
+        }
+        /* FIX 3: ADDED - Necessary for children of the tile to exist in 3D space for the flip */
+        .preserve-3d { 
+            transform-style: preserve-3d;
+        }
+
+        /* Rotation class to be applied by JS */
+        #phone-flipper.rotated {
+            transform: rotateY(180deg);
+        }
+
+        /* Front and Back faces styles - MUST be absolute and hide backface */
+        #phone-screen, #back-plate {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden; /* Hide the back of the element when facing away */
+            border-radius: 30px; /* Inherit border-radius from #phone-screen */
+        }
+
+        /* Front Face (The App Screen) */
+        #phone-screen {
+            background-color: white; /* Inner screen background */
+            display: flex;
+            flex-direction: column; /* Default: Portrait Stack */
+            overflow-y: auto;
+            overflow-x: hidden;
+            transform: rotateY(0deg); /* Default facing forward */
+        }
+        
+        #phone-screen.landscape-mode {
+            flex-direction: row; /* Switch to horizontal flow */
+        }
+
+        /* Back Plate (The Metallic Logo) */
+        #back-plate {
+            /* Metallic/Dark Aesthetic */
+            background-color: #222; 
+            background: linear-gradient(135deg, #444, #222, #444);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transform: rotateY(180deg); /* Initial state is flipped away */
+            
+            /* Ensure inner content scrolls when dimensions are swapped */
+            overflow-y: auto; 
+            overflow-x: hidden;
+        }
+        #back-plate h2 {
+            font-size: 3rem; 
+            font-weight: bold;
+            letter-spacing: 0.5rem;
+            color: var(--brand-primary); /* Burnt Orange for the logo */
+            text-shadow: 0 0 10px rgba(211, 71, 22, 0.5); /* Subtle glow */
+        }
+        
+        /* --- LANDSCAPE SIDEBAR STYLING --- */
+        /* Hide landscape sidebar by default */
+        #landscape-sidebar { display: none; }
+
+        /* Show sidebar in landscape mode and define its look */
+        #phone-screen.landscape-mode #landscape-sidebar {
+            display: flex !important; /* Override hidden */
+            height: 100%;
+            width: 80px; /* Fixed width for the sidebar */
+            flex-shrink: 0;
+            background-color: var(--brand-secondary); /* Deep Cyan */
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+
+        #landscape-sidebar-progress {
+            height: 70%; 
+            width: 8px; 
+            background-color: #5d92a1; /* Lighter Deep Cyan for track */
+            border-radius: 4px;
+            position: relative;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        #landscape-sidebar-fill {
+            width: 100%;
+            background-color: var(--brand-primary); /* Burnt Orange fill */
+            position: absolute;
+            bottom: 0; /* Fills from the bottom */
+            transition: height 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .sidebar-nav-btn {
+            background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white on Deep Cyan */
+            color: white;
+            transition: background-color 0.2s;
+        }
+        .sidebar-nav-btn:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+
+        /* --- ELEMENT VISIBILITY CONTROL --- */
+
+        /* Hide portrait elements when in landscape mode */
+        #phone-screen.landscape-mode header,
+        #phone-screen.landscape-mode .p-3.border-b, /* Progress bar container */
+        #phone-screen.landscape-mode #navigation-strip,
+        #phone-screen.landscape-mode footer {
+            display: none !important;
+        }
+
+        /* Adjust main content in landscape mode */
+        #phone-screen.landscape-mode main {
+             /* Remove vertical padding, keep horizontal for scrollable content */
+            padding: 0.5rem 1rem 0.5rem 1rem; 
+            width: 100%;
+            height: 100%;
+        }
+
+
+        /* --- ALLGOOD ACADEMY BRAND STYLES (Inner App) --- */
+        /* Georgia for authority and professionalism (Headlines) */
+        .font-georgia {
+            font-family: Georgia, ui-serif, Cambria, "Times New Roman", Times, serif;
+        }
+        
+        .btn-primary {
+            background-color: var(--brand-primary);
+            color: white;
+            transition: all 0.2s ease-in-out;
+            opacity: 1; /* Reset for non-disabled state */
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: #A03810; /* Darker Orange */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary:disabled {
+            background-color: #F2DDCB; /* Disabled brand color */
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .btn-secondary {
+            background-color: white;
+            color: var(--text-primary);
+            border: 1px solid var(--brand-primary);
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #f3f4f6;
+        }
+        .btn-secondary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        #progress-bar {
+            height: 8px; /* Slightly smaller for mobile */
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        #progress-bar-fill {
+            height: 100%;
+            background-color: var(--brand-primary);
+            transition: width 0.3s ease;
+        }
+        
+        /* Custom card styling for content highlights */
+        .goodblock-card {
+            background-color: #ffffff;
+            border-left: 5px solid var(--brand-secondary);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
+            cursor: default; 
+        }
+        .goodblock-card.primary {
+            border-left: 5px solid var(--brand-primary); 
+        }
+        
+        /* Style for header icons (White on Deep Cyan BG) */
+        .header-icon-btn {
+            background-color: transparent;
+            border: 1px solid #ffffff;
+            transition: all 0.2s ease;
+        }
+        .header-icon-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .header-icon-btn i {
+            color: #ffffff;
+        }
+
+        /* --- TOOLTIP STYLES (Step 2: Definition Tooltips) --- */
+        .tooltip-container {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            border-bottom: 2px dashed var(--brand-secondary);
+            color: var(--brand-secondary);
+            font-weight: bold;
+        }
+        /* Hiding the inline content element, its content is now read by the modal JS */
+        .tooltip-content {
+            display: none !important; 
+        }
+
+        /* --- COMPARISON SLIDER STYLES (Step 11) --- */
+        .comparison-slider-container {
+            position: relative;
+            height: 200px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .comparison-before, .comparison-after {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: clip-path 0.3s ease-out;
+            color: white;
+            text-align: center;
+        }
+        .comparison-before {
+            background-color: #dc2626; /* Red for Problem */
+        }
+        .comparison-after {
+            background-color: var(--brand-secondary); /* Cyan for Solution */
+        }
+        .comparison-divider {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: white;
+            cursor: grab;
+            z-index: 5;
+            transition: transform 0.3s ease;
+        }
+        .comparison-divider-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            background-color: rgba(0,0,0,0.4);
+            border-radius: 50%;
+            padding: 0.5rem;
+        }
+
+        /* Responsive Fallback (for very small screens, make it full-width/height) */
+        @media (max-width: 420px) {
+            #mobile-frame {
+                width: 100%;
+                height: 100vh;
+                border-radius: 0;
+                border: none;
+                box-shadow: none;
+            }
+            #phone-screen {
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="mobile-frame">
+        <!-- NEW: The Flipper Wrapper (Handles 3D Rotation) -->
+        <div id="phone-flipper"> 
+            
+            <!-- FRONT FACE: The App Screen (#phone-screen) -->
+            <div id="phone-screen">
+                <!-- 
+                    ==========================================================
+                    NESTED MOBILE GOODBLOCK APPLICATION START
+                    ========================================================== 
+                -->
+                <!-- 
+                    The main application wrapper. Its flex direction is toggled by JS 
+                    to support both portrait (flex-col) and landscape (flex-row) modes.
+                -->
+                <div id="course-app" class="w-full h-full flex bg-white"> 
+                    
+                    <!-- LANDSCAPE MODE SIDEBAR (Hidden by default) -->
+                    <div id="landscape-sidebar" class="hidden flex-col items-center justify-between py-6" style="background-color: var(--brand-secondary);">
+                        
+                        <!-- TOP CONTROLS -->
+                        <div class="flex flex-col items-center space-y-3">
+                            <!-- Orientation Toggle Button (Icon Only) -->
+                            <button id="landscape-sidebar-orientation" class="p-3 rounded-xl transition-colors sidebar-nav-btn" onclick="toggleOrientation()" aria-label="Toggle Landscape/Portrait" title="Switch to Landscape">
+                                <i id="landscape-orientation-icon" class="fas fa-mobile-screen-button"></i>
+                            </button>
+                            
+                            <!-- Menu Button (Icon Only) -->
+                            <button id="landscape-sidebar-menu" class="p-3 rounded-xl transition-colors sidebar-nav-btn" onclick="toggleNavigationMenu()" aria-label="Open Navigation Menu">
+                                <i class="fas fa-bars"></i>
+                            </button>
+
+                            <!-- Restart Button (Icon Only) -->
+                            <button id="landscape-sidebar-restart" class="p-3 rounded-xl transition-colors sidebar-nav-btn hidden" onclick="restartLearnable()" aria-label="Restart GoodBlock">
+                                <i class="fas fa-home"></i>
+                            </button>
+                        </div>
+
+                        <!-- MIDDLE PROGRESS BAR (Vertical) -->
+                        <div id="landscape-sidebar-progress" class="rounded-full overflow-hidden">
+                            <div id="landscape-sidebar-fill" class="w-full" style="height: 0%;"></div>
+                        </div>
+
+                        <!-- BOTTOM NAVIGATION -->
+                        <div class="flex flex-col items-center space-y-3">
+                            <!-- Back Button (Icon Only) -->
+                            <button id="landscape-sidebar-back" class="p-3 rounded-xl transition-colors sidebar-nav-btn opacity-0 pointer-events-none" onclick="navigate(-1)" title="Back">
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                            
+                            <!-- Next/Start Button (Icon Only) -->
+                            <button id="landscape-sidebar-next" class="p-3 rounded-xl transition-colors sidebar-nav-btn" onclick="navigate(1)" title="Start">
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- END LANDSCAPE MODE SIDEBAR -->
+
+                    
+                    <!-- Header: Uses Deep Cyan #357889 (var(--brand-secondary)) and Georgia font (PORTRAIT ONLY) -->
+                    <header class="p-4 flex-shrink-0 text-white flex justify-between items-center" style="background-color: var(--brand-secondary);">
+                        <!-- Skill Name Placeholder -->
+                        <h1 class="text-xl font-bold tracking-tight font-georgia">GoodBlock: <span>[Skill Name Placeholder]</span></h1>
+                        
+                        <!-- Global Icons (Navigation Menu, Orientation, and Restart) -->
+                        <div class="flex items-center space-x-2">
+                            <!-- New: Orientation Toggle Button (PORTRAIT) -->
+                            <button id="orientation-button" class="p-1.5 rounded-full transition-colors header-icon-btn" onclick="toggleOrientation()" aria-label="Toggle Landscape/Portrait" title="Switch to Landscape">
+                                <i id="orientation-icon" class="fas fa-mobile-screen-button fa-sm"></i>
+                            </button>
+                            
+                            <!-- Global Navigation Menu Button (Icon) -->
+                            <button id="menu-button" class="p-1.5 rounded-full transition-colors header-icon-btn" onclick="toggleNavigationMenu()" aria-label="Open Navigation Menu">
+                                <i class="fas fa-bars fa-sm"></i>
+                            </button>
+
+                            <!-- Global Restart Button (Icon) -->
+                            <button id="restart-button" class="p-1.5 rounded-full transition-colors hidden header-icon-btn" onclick="restartLearnable()" aria-label="Restart GoodBlock">
+                                <i class="fas fa-home fa-sm"></i>
+                            </button>
+                        </div>
+                    </header>
+
+                    <!-- Progress Bar (PORTRAIT ONLY) -->
+                    <div id="portrait-progress-bar-container" class="p-3 border-b border-gray-200 bg-gray-100 flex-shrink-0">
+                        <div id="progress-bar">
+                            <div id="progress-bar-fill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Main Content Area: Now the scrollable area -->
+                    <main class="flex-grow p-4 overflow-y-auto">
+                        
+                        <!-- Content Container - Dynamically updated by JS -->
+                        <div id="content-container" class="transition-opacity duration-300">
+                            <!-- Content will be injected here -->
+                        </div>
+                        
+                    </main>
+                    
+                    <!-- NAVIGATION STRIP (Footer Buttons) (PORTRAIT ONLY) -->
+                    <div id="navigation-strip" class="p-3 bg-gray-100 border-t border-gray-200 flex-shrink-0">
+                        <div id="navigation-bar" class="flex justify-between">
+                            <button id="back-button" class="text-sm px-4 py-2 rounded-lg font-semibold btn-secondary" onclick="navigate(-1)">Back</button>
+                            <button id="next-button" class="text-sm px-4 py-2 rounded-lg font-semibold btn-primary" onclick="navigate(1)">Start</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Footer: Uses Deep Cyan background, White text (PORTRAIT ONLY) -->
+                    <footer class="p-2 text-center text-xs text-white flex-shrink-0" style="background-color: var(--brand-secondary);">
+                        <strong class="text-white">GoodBlock</strong>. Powered by 
+                        <a href="https://www.allgoodacademy.com" target="_blank" class="font-semibold transition-colors text-white hover:underline">
+                            Allgood <span>Academy</span>
+                        </a>.
+                    </footer>
+
+                </div>
+                <!-- 
+                    ==========================================================
+                    NESTED MOBILE GOODBLOCK APPLICATION END
+                    ========================================================== 
+                -->
+
+                <!-- Tooltip Modal: NEW CENTERED MODAL STRUCTURE -->
+                <div id="tooltip-overlay" class="fixed inset-0 bg-black bg-opacity-60 z-40 flex justify-center items-center hidden transition-opacity duration-300" onclick="closeTooltipModal()">
+                    <div id="tooltip-content-card" class="bg-white rounded-xl shadow-2xl p-6 m-4 max-w-xs w-full transform transition-transform duration-300 scale-90 opacity-0" onclick="event.stopPropagation()">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 id="modal-term" class="text-lg font-bold font-georgia" style="color: var(--brand-secondary);">Term</h4>
+                            <button class="text-2xl font-light text-gray-500 hover:text-red-500 transition-colors ml-4" onclick="closeTooltipModal()">&times;</button>
+                        </div>
+                        <p id="modal-definition" class="text-sm text-gray-700">Definition will go here.</p>
+                    </div>
+                </div>
+
+                <!-- FIX 1: Image Modal for Full-Screen View - Simplified constraints -->
+                <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-80 z-50 flex justify-center items-center hidden transition-opacity duration-300" onclick="closeImageModal()">
+                    <div class="relative w-full h-full flex justify-center items-center p-4" onclick="event.stopPropagation()">
+                        <button class="absolute top-4 right-4 text-white text-4xl font-light opacity-75 hover:opacity-100 transition-opacity z-10" onclick="closeImageModal()">&times;</button>
+                        <img id="modal-image-content" src="" alt="Expanded View" 
+                            class="max-w-full max-h-full rounded-lg cursor-pointer object-contain" 
+                            onclick="closeImageModal()">
+                        <p class="text-white text-center absolute bottom-4 text-xs">Click image or 'X' to close</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Slide-in Panel/Modal -->
+                <div id="navigation-modal" class="fixed inset-0 bg-black bg-opacity-70 z-40 flex justify-end items-start hidden transition-opacity duration-300" onclick="toggleNavigationMenu()">
+                    <div class="w-3/4 max-w-[280px] h-full bg-white shadow-2xl p-4 overflow-y-auto transform transition-transform duration-300 translate-x-full" id="navigation-panel" onclick="event.stopPropagation()">
+                        <div class="flex justify-between items-center pb-3 border-b border-gray-200" style="color: var(--text-primary);">
+                            <h3 class="text-lg font-bold">Jump To Topic</h3>
+                            <button class="text-3xl font-light text-gray-500 hover:text-red-500 transition-colors" onclick="toggleNavigationMenu()">&times;</button>
+                        </div>
+                        <div id="topic-list" class="mt-3 space-y-1">
+                            <!-- Topics will be dynamically inserted here by renderNavigationMenu() -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- NEW: BACK FACE (The metallic GoodBlock Plate) -->
+            <div id="back-plate">
+                <h2 class="font-georgia">GoodBlock</h2>
+                <p class="text-xs mt-2 text-gray-400">Powered by Allgood Academy</p>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        // --- CORE APPLICATION LOGIC ---
+
+        let currentStep = 0;
+        const totalContentSteps = 15; // Steps 1 through 15 are trackable content steps. Step 0 is intro.
+
+        const contentContainer = document.getElementById('content-container');
+        
+        // Portrait elements
+        const backButton = document.getElementById('back-button');
+        const nextButton = document.getElementById('next-button');
+        const progressBarFill = document.getElementById('progress-bar-fill');
+        const restartButton = document.getElementById('restart-button');
+        const orientationIcon = document.getElementById('orientation-icon');
+        const orientationButton = document.getElementById('orientation-button');
+        
+        // Landscape sidebar elements
+        const mobileFrame = document.getElementById('mobile-frame');
+        const phoneFlipper = document.getElementById('phone-flipper'); // NEW: Flipper Element
+        const lSidebarOrientationButton = document.getElementById('landscape-sidebar-orientation');
+        const lSidebarOrientationIcon = document.getElementById('landscape-orientation-icon');
+        const lSidebarRestartButton = document.getElementById('landscape-sidebar-restart');
+        const lSidebarProgressBarFill = document.getElementById('landscape-sidebar-fill');
+        const lSidebarBackButton = document.getElementById('landscape-sidebar-back');
+        const lSidebarNextButton = document.getElementById('landscape-sidebar-next');
+        const courseApp = document.getElementById('course-app'); 
+
+        // Current state for interactive components (e.g., to track if an element is complete)
+        let interactiveState = {}; 
+
+        // UPDATED CONFIGURATION
+        const goodBlockConfig = {
+            topicName: "The Power of Saying \"I'm Sorry\" the Right Way",
+            skillName: "Mastering the Sincere Apology",
+            objectives: "Shift from defensive ego to relational repair; identify the 5-step apology checklist.",
+        };
+        
+        // --- INTERACTIVE ELEMENT LOGIC ---
+        
+        // New function to open and populate the central tooltip modal
+        function openTooltipModal(term, definition) {
+            const modal = document.getElementById('tooltip-overlay');
+            const termEl = document.getElementById('modal-term');
+            const defEl = document.getElementById('modal-definition');
+            const card = document.getElementById('tooltip-content-card');
+
+            termEl.textContent = term;
+            defEl.textContent = definition;
+            
+            modal.classList.remove('hidden');
+
+            // Trigger smooth transition for the card
+            setTimeout(() => {
+                card.classList.remove('scale-90', 'opacity-0');
+            }, 10);
+        }
+
+        function closeTooltipModal() {
+            const modal = document.getElementById('tooltip-overlay');
+            const card = document.getElementById('tooltip-content-card');
+            
+            card.classList.add('scale-90', 'opacity-0');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+        window.closeTooltipModal = closeTooltipModal;
+
+        // FIX IMPLEMENTED HERE: Correctly derive the term by excluding the hidden definition content.
+        function openTooltipHandler(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const container = event.currentTarget;
+            
+            // 1. Extract the definition content first.
+            const tooltipContentElement = container.querySelector('.tooltip-content');
+            let definition = '';
+            if (tooltipContentElement) {
+                definition = tooltipContentElement.textContent.trim();
+            } else {
+                console.error("Tooltip content element not found for extraction.");
+                return; 
+            }
+            
+            // 2. Correctly extract the term: Clone the container, remove the hidden element, and read the remaining text.
+            const tempContainer = container.cloneNode(true);
+            const hiddenContent = tempContainer.querySelector('.tooltip-content');
+            if (hiddenContent) {
+                 hiddenContent.remove();
+            }
+            const term = tempContainer.textContent.trim(); // Now only contains the visible term
+
+            openTooltipModal(term, definition);
+        }
+        
+        // 4. Definition Tooltips Logic (Applied to any step with tooltips data)
+        function setupTooltips() {
+            document.querySelectorAll('.tooltip-container').forEach(container => {
+                // Remove existing listeners and add the new one
+                container.removeEventListener('click', openTooltipHandler);
+                container.addEventListener('click', openTooltipHandler);
+            });
+        }
+        // Removed the old window.document.addEventListener('click') handler as the modal handles closing now.
+
+
+        // 1. Accordion Drop-Downs (Setup) - Reused/Cleaned from existing code
+        function setupAccordions(selector = '.accordion-header') {
+            document.querySelectorAll(selector).forEach(header => {
+                header.removeEventListener('click', toggleAccordion);
+                header.addEventListener('click', toggleAccordion);
+            });
+        }
+        
+        // UPDATED: Now supports exclusive reveal for numbered-accordion (Step 10)
+        function toggleAccordion(event) {
+            const header = event.currentTarget;
+            const targetId = header.getAttribute('data-target');
+            const targetContent = document.getElementById(targetId);
+            const icon = header.querySelector('.accordion-icon');
+            
+            // Find the closest parent step/content container
+            const stepWrapper = header.closest('#content-container');
+            const isNumberedAccordion = header.classList.contains('numbered-accordion-header');
+
+            // Logic to check if we need exclusive mode (only applies to numbered accordions)
+            if (isNumberedAccordion) {
+                // Close other numbered accordions in the same step
+                stepWrapper.querySelectorAll('.numbered-accordion-header').forEach(h => {
+                    const content = document.getElementById(h.getAttribute('data-target'));
+                    const otherIcon = h.querySelector('.accordion-icon');
+                    
+                    if (content && content !== targetContent && !content.classList.contains('hidden')) {
+                        content.classList.add('hidden');
+                        otherIcon.style.transform = 'rotate(0deg)';
+                        // Note: Shadow logic is already applied/removed outside this exclusive loop
+                    }
+                });
+            } else {
+                 // For non-numbered, general accordions (like Step 4), allow multiple open.
+                 // This block ensures Step 4 still works as before (allow multiple open)
+                 // This code block is kept but simplified as the main logic is in the numbered block above.
+            }
+
+            // Toggle the clicked accordion
+            if (targetContent.classList.contains('hidden')) {
+                targetContent.classList.remove('hidden');
+                // FIX 2: Change rotation from 180deg to 90deg for the right-arrow icon (to point down)
+                icon.style.transform = 'rotate(90deg)'; 
+                header.parentElement.classList.add('shadow-md');
+            } else {
+                targetContent.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+                header.parentElement.classList.remove('shadow-md');
+            }
+        }
+        
+        // 5. Expandable Text Block ('Read More')
+        function toggleExpandText(id) {
+            const content = document.getElementById(`expand-content-${id}`);
+            const button = document.getElementById(`expand-button-${id}`);
+            const gradient = document.getElementById(`gradient-overlay-${id}`); // Get the new gradient element
+
+            if (content.classList.contains('max-h-20')) {
+                // EXPAND
+                content.classList.remove('max-h-20', 'overflow-hidden');
+                content.classList.add('max-h-full');
+                gradient.classList.add('hidden'); // Hide the gradient when expanded
+                button.innerHTML = 'Show Less <i class="fas fa-chevron-up ml-2"></i>';
+            } else {
+                // COLLAPSE
+                content.classList.add('max-h-20', 'overflow-hidden');
+                content.classList.remove('max-h-full');
+                gradient.classList.remove('hidden'); // Show the gradient when collapsed
+                button.innerHTML = 'Read More <i class="fas fa-chevron-down ml-2"></i>';
+            }
+            document.querySelector('main').scrollTop = 0; // Scroll to top to ensure text is visible
+        }
+        window.toggleExpandText = toggleExpandText;
+
+
+        // 6. Comparison Slider (Dual-View)
+        function setupComparisonSlider() {
+            const container = document.getElementById('comparison-slider-container');
+            const divider = document.getElementById('comparison-divider');
+            const before = document.getElementById('comparison-before');
+            const after = document.getElementById('comparison-after');
+            
+            if (!container || !divider) return;
+
+            let isDragging = false;
+
+            const updateClip = (x) => {
+                // Ensure x is within the container bounds
+                const rect = container.getBoundingClientRect();
+                const containerX = x - rect.left;
+                const percent = Math.max(0, Math.min(100, (containerX / rect.width) * 100));
+
+                divider.style.left = `${percent}%`;
+                before.style.clipPath = `polygon(0 0, ${percent}% 0, ${percent}% 100%, 0 100%)`;
+                after.style.clipPath = `polygon(${percent}% 0, 100% 0, 100% 100%, ${percent}% 100%)`;
+            };
+
+            const dragMove = (event) => {
+                if (!isDragging) return;
+                let clientX = event.clientX;
+                if (event.touches) {
+                    clientX = event.touches[0].clientX;
+                }
+                updateClip(clientX);
+            };
+
+            const dragEnd = () => {
+                isDragging = false;
+                divider.style.cursor = 'grab';
+            };
+
+            const dragStart = (event) => {
+                isDragging = true;
+                divider.style.cursor = 'grabbing';
+                event.preventDefault(); // Prevent default touch behavior
+            };
+
+            // Set initial position to 50%
+            updateClip(container.getBoundingClientRect().left + container.offsetWidth / 2);
+            
+            // Mouse Events
+            divider.addEventListener('mousedown', dragStart);
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('mouseup', dragEnd);
+
+            // Touch Events
+            divider.addEventListener('touchstart', dragStart);
+            document.addEventListener('touchmove', dragMove);
+            document.addEventListener('touchend', dragEnd);
+        }
+
+        // 9. Quote Carousel (Click-to-Advance)
+        let carouselIndex = 0;
+        function renderQuoteCarousel(stepData) {
+            carouselIndex = 0; // Reset index on step load
+            const container = document.createElement('div');
+            container.id = 'quote-carousel-container';
+            container.className = 'flex items-center space-x-2';
+            
+            const quotes = stepData.quotes;
+
+            const prevButton = `<button onclick="nextQuote(-1, ${quotes.length})" class="p-3 text-lg rounded-full btn-secondary disabled:opacity-30 disabled:cursor-not-allowed" id="carousel-prev" disabled><i class="fas fa-chevron-left"></i></button>`;
+            const nextButton = `<button onclick="nextQuote(1, ${quotes.length})" class="p-3 text-lg rounded-full btn-secondary" id="carousel-next"><i class="fas fa-chevron-right"></i></button>`;
+            const quoteContent = `<div id="carousel-content" class="flex-grow min-h-[150px] p-4 bg-gray-50 border rounded-xl flex flex-col justify-center transition-all duration-500 ease-in-out"></div>`;
+
+            container.innerHTML = prevButton + quoteContent + nextButton;
+            
+            // Append to main content, then update content
+            contentContainer.appendChild(container);
+            updateQuoteContent(quotes);
+        }
+        function updateQuoteContent(quotes) {
+            const contentDiv = document.getElementById('carousel-content');
+            const prevBtn = document.getElementById('carousel-prev');
+            const nextBtn = document.getElementById('carousel-next');
+
+            if (!contentDiv) return;
+
+            contentDiv.style.opacity = 0; // Start fade out
+            setTimeout(() => {
+                const quote = quotes[carouselIndex];
+                contentDiv.innerHTML = `
+                    <i class="fas fa-quote-left text-2xl mb-2" style="color: var(--brand-primary);"></i>
+                    <p class="text-base italic font-georgia">${quote.text}</p>
+                    <p class="text-xs mt-2 text-gray-600 font-semibold">— ${quote.author}</p>
+                `;
+                contentDiv.style.opacity = 1; // Fade in
+
+                // Update buttons
+                prevBtn.disabled = carouselIndex === 0;
+                nextBtn.disabled = carouselIndex === quotes.length - 1;
+            }, 250); // Mid-fade duration
+        }
+        function nextQuote(direction, total) {
+            const newIndex = carouselIndex + direction;
+            if (newIndex >= 0 && newIndex < total) {
+                carouselIndex = newIndex;
+                updateQuoteContent(courseSteps[currentStep].quotes);
+            }
+        }
+        
+        // 10. The "Why/How" Toggle Switch
+        function toggleWhyHow(id, content) {
+            const switchElement = document.getElementById(`toggle-switch-${id}`);
+            const contentDiv = document.getElementById(`toggle-content-${id}`);
+            
+            const isWhy = switchElement.checked;
+            
+            contentDiv.style.opacity = 0; // Fade out
+            setTimeout(() => {
+                contentDiv.innerHTML = isWhy ? content.why : content.how;
+                contentDiv.style.opacity = 1; // Fade in
+            }, 200);
+        }
+
+        // --- NAVIGATION, UTILITY, AND MASTER RENDERER ---
+
+        // Function to restart the entire learnable guide
+        function restartLearnable() {
+            currentStep = 0;
+            renderStep();
+        }
+
+        // Function to render the current step
+        function renderStep() {
+            const stepData = courseSteps[currentStep];
+            const maxProgress = totalContentSteps; 
+            const lastStepIndex = courseSteps.length - 1; 
+            
+            // --- Setup and State ---
+            const phoneScreen = document.getElementById('phone-screen');
+            // Check the flipper for the rotated class, not the mobile-frame, to know true orientation
+            const isLandscape = mobileFrame.classList.contains('landscape-mode'); 
+            const currentBackButton = isLandscape ? lSidebarBackButton : backButton;
+            const currentNextButton = isLandscape ? lSidebarNextButton : nextButton;
+            const currentNavBar = document.getElementById('navigation-bar'); 
+            
+            lSidebarRestartButton.classList.toggle('hidden', currentStep === 0);
+            restartButton.classList.toggle('hidden', currentStep === 0);
+            document.querySelector('header h1 span').textContent = goodBlockConfig.skillName; 
+
+            // Clear old content and hide progress
+            contentContainer.innerHTML = '';
+            
+            // 1. Render Step Content based on Type
+            // Standard layout with title
+            if (stepData.type !== 'intro') {
+                 contentContainer.innerHTML = `<h2 class="text-xl font-bold text-gray-800 mb-4 font-georgia">${currentStep}. ${stepData.title}</h2><div id="step-content-body"></div>`;
+            }
+
+            const stepContentBody = document.getElementById('step-content-body') || contentContainer;
+
+            switch (stepData.type) {
+                case 'intro':
+                    renderIntroStep(stepData);
+                    break;
+                case 'content-tooltip':
+                    renderContentStep(stepData);
+                    setTimeout(setupTooltips, 0); 
+                    break;
+                case 'tabs':
+                    renderTabbedContent(stepData);
+                    break;
+                case 'reveal':
+                    renderLayeredReveal(stepData);
+                    break;
+                case 'read-more':
+                    renderExpandableText(stepData);
+                    break;
+                case 'slider':
+                    renderComparisonSlider(stepData);
+                    setTimeout(setupComparisonSlider, 0); 
+                    break;
+                case 'callout-tiles':
+                    renderImageCalloutTiles(stepData);
+                    break;
+                case 'numbered-accordion':
+                    renderNumberedAccordion(stepData);
+                    setTimeout(() => setupAccordions('.numbered-accordion-header'), 0);
+                    break;
+                case 'carousel':
+                    renderQuoteCarousel(stepData);
+                    break;
+                case 'toggle':
+                    renderToggleSwitch(stepData);
+                    break;
+                case 'commitment':
+                    renderCommitmentStep(stepData);
+                    break;
+                case 'conclusion':
+                    renderConclusionStep(stepData);
+                    break;
+                case 'accordion': // FIX: Explicitly handle accordion type here
+                    renderContentStep(stepData);
+                    setTimeout(setupAccordions, 0); 
+                    break;
+                default: // Handles all other content types (like Step 1, 3, 14, 15)
+                    renderContentStep(stepData);
+                    break;
+            }
+
+
+            // 2. Update Progress Bar
+            let progress = 0;
+            if (currentStep > 0 && currentStep <= maxProgress) {
+                progress = ((currentStep) / maxProgress) * 100; 
+            } else if (currentStep === lastStepIndex) { 
+                progress = 100;
+            }
+
+            progressBarFill.style.width = `${progress}%`;
+            lSidebarProgressBarFill.style.height = `${progress}%`;
+
+            // 3. Update Navigation Buttons
+            const updateButtonState = (button, text, title) => {
+                if (!isLandscape) { button.textContent = text; }
+                button.title = title;
+            };
+
+            // Common navigation cleanup
+            currentBackButton.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+            if (!isLandscape) {
+                currentNavBar.classList.remove('justify-center');
+                currentNavBar.classList.add('justify-between');
+            }
+            
+            // The 'commitment' type is removed, so isActionRequired is no longer checked against stepData.type.
+            // We just ensure the button is enabled unless specified otherwise (currently only on Step 0)
+            currentNextButton.disabled = stepData.isActionRequired || false; 
+            currentNextButton.setAttribute('onclick', 'navigate(1)');
+
+            if (currentStep === 0) {
+                currentBackButton.classList.add('hidden');
+                updateButtonState(currentNextButton, "Start GoodBlock", "Start Module");
+                // FIX: Center the button on the homepage in portrait mode
+                if (!isLandscape) { 
+                    currentNavBar.classList.remove('justify-between');
+                    currentNavBar.classList.add('justify-center'); 
+                }
+            } else if (currentStep === lastStepIndex) { 
+                updateButtonState(currentNextButton, "Restart GoodBlock", "Restart Module");
+                updateButtonState(currentBackButton, "Back", "Back");
+            } else { 
+                updateButtonState(currentNextButton, "Next", "Next Step");
+                updateButtonState(currentBackButton, "Back", "Back");
+            }
+
+            // Scroll to the top of the content when changing steps
+            document.querySelector('main').scrollTop = 0; 
+        }
+
+        // Function to handle navigation
+        function navigate(direction) {
+            const lastStepIndex = courseSteps.length - 1;
+
+            if (currentStep === lastStepIndex && direction === 1) {
+                restartLearnable();
+                return;
+            }
+
+            const newStep = currentStep + direction;
+            if (newStep >= 0 && newStep <= lastStepIndex) {
+                currentStep = newStep;
+            }
+            
+            renderStep();
+        }
+
+        // RENDERERS FOR NEW STEP TYPES
+
+        function renderIntroStep(stepData) {
+            const stepContentBody = contentContainer;
+            let stepBody = stepData.body;
+            stepBody = stepBody.replace('{{topic}}', goodBlockConfig.topicName);
+            stepBody = stepBody.replace('{{objectives}}', goodBlockConfig.objectives);
+            stepContentBody.innerHTML = stepBody;
+        }
+
+        function renderContentStep(stepData) {
+            const stepContentBody = document.getElementById('step-content-body');
+            stepContentBody.innerHTML = stepData.body;
+        }
+        
+        // 2. Tabbed Content Interface
+        function renderTabbedContent(stepData) {
+            const stepContentBody = document.getElementById('step-content-body');
+            const tabs = stepData.tabs.map((tab, index) => `
+                <button 
+                    class="tab-button w-1/2 px-4 py-2 text-sm font-semibold rounded-t-lg transition-all duration-200 ${index === 0 ? 'bg-white border-b-2 border-red-600 text-red-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
+                    onclick="selectTab(${index})"
+                    data-tab-index="${index}"
+                >
+                    ${tab.label}
+                </button>
+            `).join('');
+            
+            // Set initial background color for content area (Index 0 is 'Vague Goal' - Red/Problem)
+            const initialBgClass = 'bg-red-50';
+
+            stepContentBody.innerHTML = `
+                <div class="flex border-b border-gray-200 mb-0">${tabs}</div>
+                <div id="tab-content-area" class="p-4 goodblock-card border-none shadow-none min-h-[150px] transition-colors duration-300 ${initialBgClass}">
+                    ${stepData.tabs[0].content}
+                </div>
+            `;
+            window.selectTab = selectTab; // Expose to global scope for onclick
+        }
+        function selectTab(index) {
+            const buttons = document.querySelectorAll('.tab-button');
+            const contentArea = document.getElementById('tab-content-area');
+            const stepData = courseSteps[currentStep];
+            
+            // Define color mapping
+            const colorMap = {
+                0: { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-600' }, // Vague Goal (Problem)
+                1: { bg: 'bg-green-50', text: 'text-green-600', border: 'border-green-600' } // Atomic Script (Solution)
+            };
+            
+            const selected = colorMap[index];
+            // const inactive = colorMap[index === 0 ? 1 : 0]; // The other index - Not strictly needed if removing all dynamic colors first
+
+            buttons.forEach(button => {
+                const tabIndex = parseInt(button.getAttribute('data-tab-index'));
+                
+                // Clear all dynamic classes first (simpler approach than tracking active/inactive text colors)
+                button.classList.remove('bg-white', 'border-b-2', 'border-red-600', 'text-red-600', 'border-green-600', 'text-green-600');
+                button.classList.remove('bg-gray-100', 'text-gray-600', 'hover:bg-gray-200');
+
+                if (tabIndex === index) {
+                    // Apply selected style
+                    button.classList.add('bg-white', 'border-b-2', selected.border, selected.text);
+                } else {
+                    // Apply inactive style
+                    button.classList.add('bg-gray-100', 'text-gray-600', 'hover:bg-gray-200');
+                }
+            });
+
+            // Update content background color
+            contentArea.classList.remove(colorMap[0].bg, colorMap[1].bg); // Remove both previous colors
+            contentArea.classList.add(selected.bg); // Add the new color
+
+            // Update content body
+            contentArea.innerHTML = stepData.tabs[index].content;
+        }
+
+
+        // 3. The Layered Reveal (EXCLUSIVE ACCORDION LOGIC APPLIED HERE)
+        function renderLayeredReveal(stepData) {
+            const stepContentBody = document.getElementById('step-content-body');
+            const stepsHtml = stepData.layers.map((layer, index) => `
+                <div class="mb-3" id="reveal-wrapper-${index}">
+                    <button 
+                        class="reveal-button w-full text-left p-3 rounded-lg font-semibold transition-colors flex items-center justify-between shadow-md"
+                        style="background-color: var(--brand-secondary); color: white;"
+                        onclick="revealLayer(${index}, ${stepData.layers.length})"
+                        id="reveal-btn-${index}"
+                        data-target-id="reveal-content-${index}"
+                    >
+                        <span><i class="${layer.icon} mr-2"></i> ${layer.title}</span>
+                        <i class="fas fa-eye ml-2 text-white opacity-70 reveal-icon"></i>
+                    </button>
+                    <!-- Collapsing Container: Only max-h and overflow. NO PADDING. -->
+                    <div id="reveal-content-${index}" class="max-h-0 overflow-hidden transition-all duration-300">
+                        <!-- Content Wrapper: Card styling and padding applied here to prevent peeking -->
+                        <div class="goodblock-card primary p-4 mt-2 rounded-t-none border-t-0">
+                            ${layer.content}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            stepContentBody.innerHTML = `<p class="mb-4 text-sm">${stepData.intro}</p>` + stepsHtml;
+            window.revealLayer = revealLayer;
+        }
+        
+        function revealLayer(targetIndex, total) {
+            const stepWrapper = document.getElementById('step-content-body'); 
+
+            for (let i = 0; i < total; i++) {
+                const content = document.getElementById(`reveal-content-${i}`);
+                const button = document.getElementById(`reveal-btn-${i}`);
+                
+                if (i === targetIndex) {
+                    // Toggle the clicked layer
+                    if (content.classList.contains('max-h-0')) {
+                        // OPEN: Set max-height for fluid collapse/expand and update button style
+                        content.classList.remove('max-h-0');
+                        content.style.maxHeight = content.scrollHeight + "px"; // Set to scrollHeight for open state
+                        button.classList.remove('shadow-md');
+                        button.classList.add('shadow-lg');
+                        button.querySelector('.reveal-icon').classList.replace('fa-eye', 'fa-eye-slash');
+                    } else {
+                        // CLOSE: Reset max-height to 0 and update button style
+                        content.style.maxHeight = '0';
+                        // Keep max-h-0 for the collapsed state
+                        content.classList.add('max-h-0');
+                        button.classList.remove('shadow-lg');
+                        button.classList.add('shadow-md');
+                        button.querySelector('.reveal-icon').classList.replace('fa-eye-slash', 'fa-eye');
+                    }
+                } else {
+                    // CLOSE OTHER LAYERS (If they are open)
+                    if (!content.classList.contains('max-h-0')) {
+                        content.style.maxHeight = '0';
+                        content.classList.add('max-h-0'); 
+                        button.classList.remove('shadow-lg');
+                        button.classList.add('shadow-md');
+                        button.querySelector('.reveal-icon').classList.replace('fa-eye-slash', 'fa-eye');
+                    }
+                }
+            }
+        }
+        
+        // 5. Expandable Text Block ('Read More')
+        function renderExpandableText(stepData) {
+            const stepContentBody = document.getElementById('step-content-body');
+            
+            stepContentBody.innerHTML = `
+                <p class="text-sm mb-4">${stepData.intro}</p>
+                <div id="expand-content-${currentStep}" class="max-h-20 overflow-hidden transition-all duration-500 relative">
+                    <p class="text-sm pb-1">${stepData.fullText}</p>
+                    <!-- Gradient: h-1/3 (softer fade) and initially visible -->
+                    <div id="gradient-overlay-${currentStep}" class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-white to-transparent"></div>
+                </div>
+                <button id="expand-button-${currentStep}" class="mt-4 text-xs font-semibold px-3 py-1 rounded-full btn-secondary" onclick="toggleExpandText(${currentStep})">
+                    Read More <i class="fas fa-chevron-down ml-2"></i>
+                </button>
+            `;
+            window.toggleExpandText = toggleExpandText;
+        }
+
+        // 6. The Comparison Slider (Render setup is in the main JS block)
+        function renderComparisonSlider(stepData) {
+            const stepContentBody = document.getElementById('step-content-body');
+            
+            stepContentBody.innerHTML = `
+                <p class="text-sm mb-4">${stepData.intro}</p>
+                <div id="comparison-slider-container" class="comparison-slider-container relative">
+                    
+                    <div id="comparison-before" class="comparison-before" style="clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);">
+                        <i class="${stepData.before.icon} text-4xl mb-2 opacity-80"></i>
+                        <h3 class="font-bold font-georgia text-xl">${stepData.before.title}</h3>
+                        <p class="text-sm mt-1">${stepData.before.text}</p>
+                    </div>
+
+                    <div id="comparison-after" class="comparison-after" style="clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);">
+                        <i class="${stepData.after.icon} text-4xl mb-2 opacity-80"></i>
+                        <h3 class="font-bold font-georgia text-xl">${stepData.after.title}</h3>
+                        <p class="text-sm mt-1">${stepData.after.text}</p>
+                    </div>
+
+                    <div id="comparison-divider" class="comparison-divider" style="left: 50%;">
+                        <span class="comparison-divider-icon"><i class="fas fa-arrows-alt-h"></i></span>
+                    </div>
+                </div>
+                <p class="text-xs text-center mt-3 text-gray-600">Drag the divider to see the shift in perspective.</p>
+            `;
+        }
+
+        // 7. Image Callout Tiles
+        function renderImageCalloutTiles(stepData) {
+            const stepContentBody = document.getElementById('step-content-body');
+            
+            const tilesHtml = stepData.tiles.map((tile, index) => `
+                <div class="perspective-container h-32 w-full">
+                    <div 
+                        class="callout-tile relative w-full h-full rounded-xl shadow-lg transition-transform duration-500 preserve-3d cursor-pointer"
+                        onclick="flipTile(this)"
+                        id="callout-tile-${index}"
+                    >
+                        <!-- FRONT FACE: Icon & Title -->
+                        <div class="tile-face tile-front absolute inset-0 flex flex-col justify-center items-center rounded-xl bg-white p-4 border-b-4" style="backface-visibility: hidden; border-color: ${tile.color};">
+                            <i class="${tile.icon} text-3xl mb-1" style="color: ${tile.color};"></i>
+                            <h4 class="font-bold text-sm text-center">${tile.title}</h4>
+                            <p class="text-xs text-gray-500 mt-1">Tap to Reveal</p>
+                        </div>
+                        
+                        <!-- BACK FACE: Quote/Content -->
+                        <div class="tile-face tile-back absolute inset-0 flex flex-col justify-center items-center rounded-xl p-4 bg-gray-50 border-2 border-gray-200" style="backface-visibility: hidden; transform: rotateY(180deg);">
+                            <p class="text-xs italic text-gray-700 text-center">"${tile.content}"</p>
+                            <span class="text-xs mt-2 font-semibold" style="color: ${tile.color};">The Key Takeaway</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            stepContentBody.innerHTML = `
+                <p class="text-sm mb-4">${stepData.intro}</p>
+                <div class="grid grid-cols-2 gap-4">
+                    ${tilesHtml}
+                </div>
+            `;
+            window.flipTile = flipTile;
+        }
+        function flipTile(element) {
+            // FIX: Operate directly on the element passed (the tile div), as the inner query was redundant/failing.
+            if (element.style.transform === 'rotateY(180deg)') {
+                element.style.transform = 'rotateY(0deg)';
+            } else {
+                element.style.transform = 'rotateY(180deg)';
+            }
+        }
+
+        // 8. Step-by-Step Accordion
+        function renderNumberedAccordion(stepData) {
+            const stepContentBody = document.getElementById('step-content-body');
+            
+            const accordionsHtml = stepData.steps.map((step, index) => `
+                <div class="mb-3 goodblock-card p-0 shadow-sm border-none">
+                    <button 
+                        class="numbered-accordion-header flex justify-between w-full text-left items-center p-3 rounded-t-lg transition-colors hover:bg-gray-50" 
+                        data-target="numbered-content-${currentStep}-${index}"
+                    >
+                        <div class="flex items-center space-x-3">
+                            <div class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background-color: var(--brand-secondary);">
+                                ${index + 1}
+                            </div>
+                            <span class="font-bold text-sm" style="color: var(--text-primary);">${step.title}</span>
+                        </div>
+                        <!-- FIX 2: Changed from ▼ to ► -->
+                        <span class="accordion-icon transition-transform duration-300 text-gray-400">&#9658;</span>
+                    </button>
+                    <div id="numbered-content-${currentStep}-${index}" class="accordion-content hidden p-3 mt-1 border-t border-gray-100 bg-white rounded-b-lg">
+                        <p class="text-xs text-gray-700">${step.content}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            stepContentBody.innerHTML = `<p class="text-sm mb-4">${stepData.intro}</p>` + accordionsHtml;
+        }
+        
+        // 10. The "Why/How" Toggle Switch
+        function renderToggleSwitch(stepData) {
+            const stepContentBody = document.getElementById('step-content-body');
+            
+            stepContentBody.innerHTML = `
+                <p class="text-sm mb-4">${stepData.intro}</p>
+                <div class="flex items-center justify-center mb-4">
+                    <span class="text-sm font-semibold mr-3">WHY (Motivation)</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" value="" id="toggle-switch-${currentStep}" class="sr-only peer" checked onclick="toggleWhyHow(${currentStep}, ${JSON.stringify(stepData.content)})">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                    </label>
+                    <span class="text-sm font-semibold ml-3">HOW (Execution)</span>
+                </div>
+
+                <div id="toggle-content-${currentStep}" class="p-4 goodblock-card transition-opacity duration-200">
+                    ${stepData.content.why} <!-- Initial content is WHY -->
+                </div>
+            `;
+            window.toggleWhyHow = toggleWhyHow;
+        }
+
+        // The reserved Commitment Step (Placeholder for inputs)
+        function renderCommitmentStep(stepData) {
+            const stepContentBody = document.getElementById('step-content-body');
+            
+            stepContentBody.innerHTML = `
+                <p class="text-gray-700 mb-4 text-sm">${stepData.intro}</p>
+                <div class="space-y-4 p-4 border-2 border-dashed rounded-xl" style="border-color: var(--brand-primary); background-color: #fffaf0;">
+                    
+                    <div class="space-y-2">
+                        <label for="input-trigger" class="text-sm font-semibold flex items-center" style="color: var(--brand-secondary);">
+                            <i class="fas fa-hand-point-right mr-2"></i> 1. Define Your Specific Trigger (When?)
+                        </label>
+                        <input type="text" id="input-trigger" placeholder="e.g., After I finish my morning coffee..." class="w-full p-2 border rounded-lg text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500" disabled>
+                        <p class="text-xs italic text-gray-500">Inputs are disabled in this template view.</p>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="input-script" class="text-sm font-semibold flex items-center" style="color: var(--brand-primary);">
+                            <i class="fas fa-pencil-alt mr-2"></i> 2. Define Your 2-Minute Script (What?)
+                        </label>
+                        <textarea id="input-script" rows="2" placeholder="e.g., I will re-read one line of my notes..." class="w-full p-2 border rounded-lg text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500" disabled></textarea>
+                    </div>
+                    
+                    <p class="text-center text-xs pt-2 font-medium" style="color: var(--text-primary);">
+                        In a functional GoodBlock, clicking 'Commit & Next' would save these actions to Firestore.
+                    </p>
+                </div>
+            `;
+        }
+
+        // The reserved Conclusion Step
+        function renderConclusionStep(stepData) {
+            const stepContentBody = document.getElementById('step-content-body');
+            stepContentBody.innerHTML = stepData.body;
+        }
+
+
+        // --- UPDATED COURSE STEPS (MASTER FRAMEWORK) ---
+        const courseSteps = [
+            // STEP 0: Welcome Screen (Type: intro)
+            { 
+                type: 'intro',
+                title: "", 
+                body: `<div class="flex flex-col items-center justify-center text-center h-full min-h-[400px]">
+                        <img src="https://i.ibb.co/3yvdN59b/Horizontal-Logo.png" alt="Allgood Academy Logo" class="w-3/4 max-w-xs mb-4 mx-auto">
+                        <h2 class="text-2xl font-bold font-georgia text-gray-800">
+                            <span style="color: var(--brand-secondary);">Welcome to the</span> <span style="color: var(--brand-secondary);">{{topic}}</span> <span style="color: var(--brand-primary);">GoodBlock</span>
+                        </h2>
+                        <p class="mt-2 text-base text-gray-600">Our mission: turning <strong style="color: var(--brand-primary);">passive learning</strong> into <strong style="color: var(--brand-secondary);">pragmatic action</strong>.</p>
+                        <p class="mt-2 text-sm font-semibold" style="color: var(--brand-secondary);">
+                            Learn how to: {{objectives}}
+                        </p>
+                       </div>`,
+            },
+            
+            // STEP 1: The True Meaning of Sorry (Type: content)
+            { 
+                type: 'content',
+                title: "The True Meaning of Saying Sorry", 
+                body: `<p class="text-gray-700 text-base mb-4">An apology is more than just a quick regret. A true, helpful apology is a clear statement that genuinely shows you are sorry for the part you played in causing the difficulty.</p>
+                       <div class="goodblock-card primary">
+                           <p class="text-sm font-semibold" style="color: var(--brand-primary);">For an apology to work, it requires an important shift in focus—a kind of <strong>change of heart</strong>.</p>
+                       </div>
+                       <p class="mt-4 text-sm text-gray-700">Your natural instinct is often to defend yourself and save face. A sincere apology means letting go of these selfish goals and focusing instead on <strong>fixing the relationship</strong>.</p>`,
+            },
+            
+            // STEP 2: Defining the Core Concepts (Type: content-tooltip)
+            { 
+                type: 'content-tooltip',
+                title: "Defining the Core Concepts", 
+                body: `<p class="text-gray-700 text-base mb-4">A powerful apology requires a new vocabulary for the emotional moves you need to make in a difficult conversation.</p>
+                       <h3 class="text-lg font-semibold mb-3 font-georgia" style="color: var(--brand-secondary);">Three Critical Shifts</h3>
+                       <p class="text-sm text-gray-700 mb-4">The core idea is <span class="tooltip-container">Relational Repair<span class="tooltip-content">Focusing on fixing the relationship and achieving a positive result, rather than winning the argument.</span></span>. This overcomes the biggest barrier: our own pride.</p>
+                       <div class="goodblock-card">
+                            <p class="font-bold mb-1 text-sm" style="color: var(--brand-secondary);">The process requires <span class="tooltip-container">Ego Sacrifice<span class="tooltip-content">Honestly admitting your error and giving up the goal of saving face or proving you were right.</span></span> to restore <span class="tooltip-container">Conversation Safety<span class="tooltip-content">The feeling that the other person is respected, heard, and free from harm or disrespect.</span></span>.</p>
+                       </div>
+                       <p class="mt-4 italic text-xs text-gray-600">Only when you give up your pride for the sake of the connection can you rebuild trust.</p>`,
+            },
+            
+            // STEP 3: The Danger of the Insincere Apology (TYPE CHANGED TO 'reveal')
+            { 
+                type: 'reveal',
+                title: "The Danger of the Insincere Apology", 
+                intro: "An apology fails when the other person senses your true goal isn't to fix the hurt, but to save your own face. Click below to walk through a common failure scenario.",
+                layers: [
+                    {
+                        title: "1. The High-Cost Situation",
+                        icon: "fas fa-clock",
+                        content: `
+                            <img src="https://github.com/allgoodacademy/ImageAndAssets/blob/main/Gemini_Generated_Image_hp00pqhp00pqhp00.png?raw=true" alt="Friends waiting outside restaurant" class="w-full h-auto rounded-lg mb-3">
+                            <p class="text-sm italic text-gray-700">
+                                <strong>John</strong> (the guy in the orange shirt) showed up 30 minutes late to his friend <strong>Kayla's</strong> birthday dinner. The restaurant wouldn't seat the group until everyone arrived, making all their friends wait on the sidewalk for half an hour. The real cost here is Kayla's time and her feeling of disrespect.
+                            </p>
+                        `
+                    },
+                    {
+                        title: "2. The Ego-Driven Apology (Failure)",
+                        icon: "fas fa-exclamation-triangle",
+                        content: `
+                            <img src="https://github.com/allgoodacademy/ImageAndAssets/blob/main/Gemini_Generated_Image_bj0adubj0adubj0a.png?raw=true" alt="Person giving insincere apology" class="w-full h-auto rounded-lg mb-3">
+                            <div class="p-3 mb-2 rounded-xl shadow-sm" style="background-color: #fef2f2; border: 2px solid #fecaca;">
+                                <p class="font-bold text-sm mb-1" style="color: #dc2626;"><i class="fas fa-times-circle mr-2"></i> The Insincere Script</p>
+                                <p class="text-xs italic mt-1 text-gray-700"><strong>John to Kayla:</strong> "Look, I'm sorry you're mad, but it's not my fault traffic was terrible and the restaurant is being lame about seating us. Let's just go eat."</p>
+                            </div>
+                        `
+                    },
+                    {
+                        title: "3. The Core Pragmatic Insight",
+                        icon: "fas fa-brain",
+                        content: `
+                            <p class="font-bold mb-1 text-sm" style="color: var(--brand-secondary);">
+                                An insincere apology is still focused on <span style="color: var(--brand-primary); font-weight: bold;">you</span>.
+                            </p>
+                            <p class="text-xs text-gray-700">It's a shortcut to get them to stop being mad, not a genuine attempt to fix the hurt. You must commit to showing <strong>sincere concern</strong> before you can rebuild the foundation for a healthy conversation.</p>
+                            <p class="mt-3 text-xs text-gray-700 font-semibold">Letting go of defensiveness is the prerequisite for moving forward.</p>
+                        `
+                    }
+                ]
+            },
+            
+            // STEP 4: Accordion Drop-Downs (Type: accordion) - Mindset Shift
+            {
+                type: 'accordion',
+                title: "Before vs. After: The Internal Shift",
+                body: `<p class="text-gray-700 mb-4 text-sm">A sincere apology requires you to consciously change your internal focus. Click below to see the contrast in mindset.</p>
+                    <div class="space-y-3">
+                        <!-- Shift A: Before (Focus on Self) -->
+                        <div class="goodblock-card p-3">
+                            <button class="accordion-header flex justify-between w-full text-left items-center" data-target="shift-content-1">
+                                <div>
+                                    <h4 class="font-bold text-base mb-0" style="color: var(--brand-primary);">Focus on Self (The Old Habit)</h4>
+                                    <p class="text-xs text-gray-600">Defensive, minimizing fault, focused on feeling better.</p>
+                                </div>
+                                <!-- FIX 2: Changed from ▼ to ► -->
+                                <span class="accordion-icon transition-transform duration-300 text-gray-400">&#9658;</span>
+                            </button>
+                            <div id="shift-content-1" class="accordion-content hidden pt-3 mt-3 border-t border-gray-100">
+                                <p class="mt-2 font-medium text-xs text-gray-700"><strong>Goal:</strong> I want them to stop being mad at me so I can feel better.</p>
+                                <p class="mt-1 font-medium text-xs text-gray-700"><strong>Action:</strong> Giving a quick, casual "I'm sorry you feel that way."</p>
+                            </div>
+                        </div>
+
+                        <!-- Shift B: After (Focus on Relationship) -->
+                        <div class="goodblock-card primary p-3">
+                            <button class="accordion-header flex justify-between w-full text-left items-center" data-target="shift-content-2">
+                                <div>
+                                    <h4 class="font-bold text-base mb-0" style="color: var(--brand-secondary);">Focus on Relationship (The New Habit)</h4>
+                                    <p class="text-xs text-gray-600">Honest sorrow, deep desire to show value.</p>
+                                </div>
+                                <!-- FIX 2: Changed from ▼ to ► -->
+                                <span class="accordion-icon transition-transform duration-300 text-gray-400">&#9658;</span>
+                            </button>
+                            <div id="shift-content-2" class="accordion-content hidden pt-3 mt-3 border-t border-gray-100">
+                                <p class="mt-2 font-medium text-xs text-gray-700"><strong>Goal:</strong> I want to truly fix the hurt I caused and make sure we can talk honestly again.</p>
+                                <p class="mt-1 font-medium text-xs text-gray-700"><strong>Action:</strong> Directly stating regret for my behavior and accepting responsibility for the consequence.</p>
+                            </div>
+                        </div>
+                    </div>`,
+            },
+
+            // STEP 5: Tabbed Content Interface (Type: tabs) - Apology Failure vs. Success
+            {
+                type: 'tabs',
+                title: "Failed vs. Successful Apology",
+                intro: "The goal isn't just to say the words, it's to use the right words. Contrast these two approaches.",
+                tabs: [
+                    { 
+                        label: "Failure: Insincere", 
+                        content: `<div class="text-center p-3 text-red-700"><i class="fas fa-times-circle text-3xl mb-2"></i></div><h4 class="font-bold text-base text-red-700 font-georgia">"I'm sorry <strong>if</strong> I hurt your feelings."</h4><p class="text-sm mt-2 text-gray-700">This apology is conditional and minimizes your fault. It shifts the blame back to the recipient's feeling, which immediately breaks trust and fails to restore safety.</p>`
+                    },
+                    { 
+                        label: "Success: Sincere", 
+                        content: `<div class="text-center p-3 text-green-700"><i class="fas fa-check-circle text-3xl mb-2"></i></div><h4 class="font-bold text-base text-green-700 font-georgia">"I am sorry <strong>that</strong> my actions caused you pain."</h4><p class="text-sm mt-2 text-gray-700">This apology is direct and owns the consequence. It validates the other person's experience and sacrifices your ego for the sake of the relationship.</p>`
+                    }
+                ]
+            },
+
+            // STEP 6: The Layered Reveal (Type: reveal) - The Conversation Sequence
+            {
+                type: 'reveal',
+                title: "The Step-Out, Step-Back-In Model",
+                intro: "When conflict escalates, you must stop, fix the safety violation, and then resume. Click the sequence below.",
+                layers: [
+                    { 
+                        title: "Violation: Conversation Safety Broken", 
+                        icon: "fas fa-skull-crossbones", 
+                        content: `<p class="text-xs text-gray-700">You violated the safety of the conversation by making someone feel disrespected or harmed (e.g., you interrupted them, you forgot a promise, you spoke harshly).</p>`
+                    },
+                    { 
+                        title: "Step Out: Deliver Sincere Apology", 
+                        icon: "fas fa-handshake-angle", 
+                        content: `<p class="text-xs text-gray-700">Immediately stop the conflict. Complete the four steps for a sincere apology: <strong>Stop, Examine Heart, Deliver Apology, and Confirm Safety</strong>. This is the crucial step to <strong>restore safety</strong>.</p>`
+                    },
+                    { 
+                        title: "Step Back In: Return to the Topic", 
+                        icon: "fas fa-arrow-turn-down", 
+                        content: `<p class="text-xs text-gray-700">Once safety is confirmed (you see a return to calm), you can go back to discussing the original issue that caused the difficulty.</p>`
+                    }
+                ]
+            },
+            
+            // STEP 7: Expandable Text Block (Type: read-more) - Apology Must Come First
+            {
+                type: 'read-more',
+                title: "The Apology Must Come First",
+                intro: "If you skip the apology when you've messed up, the conversation will quickly devolve into pointless fighting. Learn why the apology must precede the discussion.",
+                fullText: "We use an apology specifically when we have violated the safety of the conversation by making someone feel disrespected or harmed. Apologizing is the very first step to restoring that safety. If you skip this crucial step when you know you messed up, the conversation will quickly devolve into pointless fighting or uncomfortable silence. The other person will remain focused on your poor behavior rather than the real problem you need to solve. For example, if you forgot to call your family member about a plan change and they are now upset, they feel disrespected. If you immediately try to explain why you forgot (defending yourself), they won't listen. They are too focused on the hurt. You must first acknowledge the hurt you caused them before you can explain the details of your situation. The apology is an essential 'step out' to fix the damaged connection before you can 'step back in' to the tough issues."
+            },
+
+            // STEP 8: The Comparison Slider (Type: slider) - Justification vs. Responsibility
+            {
+                type: 'slider',
+                title: "Justification vs. Responsibility",
+                intro: "When you start to explain <strong>why</strong> you messed up, you lose the apology. Drag the divider to visualize the difference.",
+                before: {
+                    icon: 'fas fa-shield-halved', 
+                    title: "The Defense", 
+                    text: "Attempting to explain the mistake immediately. This tells the other person your feelings matter more than their hurt."
+                },
+                after: {
+                    icon: 'fas fa-hand-holding-heart', 
+                    title: "The Repair", 
+                    text: "Acknowledging the hurt caused first, without explanation. This restores respect and shows you prioritize the relationship."
+                }
+            },
+            
+            // STEP 9: Image Callout Tiles (Type: callout-tiles) - The Four Apology Rules
+            {
+                type: 'callout-tiles',
+                title: "The Four Apology Rules",
+                intro: "When you realize you've caused pain, follow these four non-negotiable rules for immediate relational repair. Click to reveal the <strong>Purpose</strong> of each rule.",
+                tiles: [
+                    { icon: 'fas fa-hand-stop', title: "1. Stop Discussion", content: "This rule's purpose is to create a pause and signal to the other person: I see the hurt.", color: '#D34716' },
+                    { icon: 'fas fa-heart-pulse', title: "2. Examine Your Heart", content: "This rule's purpose is to dismantle your ego. Drop the defense and commit to total sincerity.", color: '#357889' },
+                    { icon: 'fas fa-face-sad-cry', title: "3. Deliver Clear Apology", content: "This rule's purpose is to validate their pain. Speak clearly, own the error, and accept the consequence.", color: '#EB8D69' },
+                    { icon: 'fas fa-check-double', title: "4. Confirm Safety", content: "This rule's purpose is to ensure trust. Wait for their acceptance before trying to solve the original problem.", color: '#2D6473' }
+                ]
+            },
+
+            // STEP 10: Step-by-Step Accordion (Type: numbered-accordion) - The Full 5-Step Checklist
+            {
+                type: 'numbered-accordion',
+                title: "The GoodBlock 5-Step Apology Checklist",
+                intro: "Master the full sequence. This final step moves you from apology back into problem-solving mode.",
+                steps: [
+                    { title: "Stop the Current Discussion", content: "Immediately recognize that the conversation is getting off track because of hurt feelings." },
+                    { title: "Examine Your Heart for Sincerity", content: "Ensure your apology is genuine. Give up any thoughts about winning, being right, or saving face." },
+                    { title: "Deliver a Clear, Specific Apology", content: "State simply and clearly that you are sorry for the specific action and the resulting difficulty it caused." },
+                    { title: "Confirm Safety and Connection", content: "Wait for the other person to accept your apology. You must see a return to calm feelings before continuing." },
+                    { title: "Return to the Original Discussion", content: "Once safety is restored, you can go back to discussing the original issue that caused the difficulty." }
+                ]
+            },
+
+            // STEP 11: Quote Carousel (Type: carousel) - Reinforcement
+            {
+                type: 'carousel',
+                title: "Reinforcement: Trust Over Pride",
+                intro: "A sincere apology is an investment in your relationship's future. Cycle through these core truths.",
+                quotes: [
+                    { text: "Trust is the highest form of human motivation. It brings out the best in people.", author: "Stephen Covey" },
+                    { text: "Humility is not thinking less of yourself, it's thinking of yourself less.", author: "C.S. Lewis" },
+                    { text: "When you correct a mistake, you're not proving you were wrong. You're proving you're smarter now.", author: "Anonymous" },
+                    { text: "The greatest lubricant of a relationship is forgiveness and the greatest mechanism of forgiveness is an apology.", author: "Gary Chapman" }
+                ]
+            },
+
+            // STEP 12: Ego vs. Connection (TYPE CHANGED TO 'accordion')
+            {
+                type: 'accordion',
+                title: "Ego vs. Connection: The Internal Debate",
+                body: `<p class="text-gray-700 mb-4 text-sm">Use the clicks below to shift your focus: are you prioritizing your **pride** or the **person** you hurt?</p>
+                    <div class="space-y-3">
+                        <!-- Card A: EGO Focus -->
+                        <div class="goodblock-card p-3 border-l-4" style="border-color: var(--brand-secondary);">
+                            <button class="accordion-header flex justify-between w-full text-left items-center" data-target="debate-content-1">
+                                <div>
+                                    <h4 class="font-bold text-base mb-0" style="color: var(--brand-secondary);">EGO: Saving Face (The Default Setting)</h4>
+                                    <p class="text-xs text-gray-600">The high cost of maintaining your pride.</p>
+                                </div>
+                                <span class="accordion-icon transition-transform duration-300 text-gray-400">&#9658;</span>
+                            </button>
+                            <div id="debate-content-1" class="accordion-content hidden pt-3 mt-3 border-t border-gray-100 flex flex-col items-center">
+                                <p class="text-xs text-gray-700 text-center">The ego wants to minimize the severity of your actions and shift blame. This preserves your pride in the short term, but it costs you <strong>trust and connection</strong> in the long term.</p>
+                                <i class="fas fa-mask mt-3 text-3xl" style="color: var(--brand-secondary);"></i>
+                            </div>
+                        </div>
+
+                        <!-- Card B: CONNECTION Focus -->
+                        <div class="goodblock-card p-3 border-l-4" style="border-color: var(--brand-primary);">
+                            <button class="accordion-header flex justify-between w-full text-left items-center" data-target="debate-content-2">
+                                <div>
+                                    <h4 class="font-bold text-base mb-0" style="color: var(--brand-primary);">CONNECTION: Relational Repair</h4>
+                                    <p class="text-xs text-gray-600">The high payoff of choosing vulnerability.</p>
+                                </div>
+                                <span class="accordion-icon transition-transform duration-300 text-gray-400">&#9658;</span>
+                            </button>
+                            <div id="debate-content-2" class="accordion-content hidden pt-3 mt-3 border-t border-gray-100 flex flex-col items-center">
+                                <p class="text-xs text-gray-700 text-center">Connection requires <strong>vulnerability</strong>. By fully accepting responsibility, you show the other person that they are more important to you than your own pride.</p>
+                                <i class="fas fa-hand-holding-heart mt-3 text-3xl" style="color: var(--brand-primary);"></i>
+                            </div>
+                        </div>
+                    </div>`,
+            },
+            
+            // STEP 13 (Filler Content/Review Steps) - Scenario
+            { 
+                type: 'content',
+                title: "Scenario: Fixing a Misunderstanding", 
+                body: `<p class="text-gray-700 text-sm mb-4">You accidentally shared a sensitive secret about a friend, and they're pulling away. Use the 'Step Out / Step Back In' model to fix it.</p>
+                       <div class="space-y-3">
+                           <div class="goodblock-card">
+                               <p class="text-sm font-semibold mb-1" style="color: #dc2626;">Initial Talk (Failure)</p>
+                               <p class="text-xs italic text-gray-700">"I didn't mean to tell everyone! I only said it because I thought we were all close friends."</p>
+                               <p class="text-xs mt-1 font-semibold" style="color: #dc2626;">Friend's Feeling: "They just want to justify the mistake."</p>
+                           </div>
+                           <div class="goodblock-card primary">
+                               <p class="text-sm font-semibold mb-1" style="color: var(--brand-secondary);">Step Out to Apologize (Success)</p>
+                               <p class="text-xs italic text-gray-700">"Wait. I am so sorry. There is no excuse for me sharing that with others. I betrayed your trust, and I apologize for causing you pain."</p>
+                               <p class="text-xs mt-1 font-semibold" style="color: var(--brand-secondary);">Friend's Feeling: The threat is removed. They feel respected and heard.</p>
+                           </div>
+                           <div class="goodblock-card">
+                               <p class="text-sm font-semibold mb-1" style="color: #4C4C4C;">Step Back In</p>
+                               <p class="text-xs italic text-gray-700">"I hope you can eventually forgive me. I truly value our relationship, and I want to fix this. What do we need to do to move forward?"</p>
+                               <p class="text-xs mt-1 font-semibold" style="color: #4C4C4C;">Result: Conversation can resume.</p>
+                           </div>
+                       </div>`,
+            },
+            // STEP 14 (Filler Content/Review Steps) - Final Check
+            { 
+                type: 'content',
+                title: "Final Check: Is Your Apology Sincere?", 
+                body: `<p class="text-gray-700 text-sm mb-4">Before you deliver the apology, check your internal commitment against these two rules:</p>
+                        <ul class="mt-4 list-disc list-inside space-y-2 text-gray-700 pl-4 text-sm">
+                            <li><strong>Specificity:</strong> Did you apologize for a <strong>specific action</strong> (e.g., "I interrupted you") or a vague concept (e.g., "being rude")?</li>
+                            <li><strong>Focus:</strong> Is the apology about <strong>their hurt</strong> ("I caused you pain") or your intent ("I didn't mean to")?</li>
+                        </ul>
+                        <div class="mt-4 p-3 bg-green-100 border border-green-300 text-green-800 rounded-lg text-xs font-medium">
+                            <strong>The Sincere Apology</strong> must be <strong>specific</strong> and <strong>relationship-focused</strong>. Vague, self-focused apologies always fail.
+                        </div>`,
+            },
+            
+            // STEP 15: Learnable Conclusion / Finish Screen (Type: conclusion)
+            { 
+                type: 'conclusion',
+                title: "GoodBlock Complete: You've Mastered Repair", 
+                body: `<div class="text-center py-8">
+                       <h2 class="text-2xl font-bold font-georgia mb-3" style="color: var(--brand-primary);">Repairing Trust is High-Leverage</h2>
+                       <p class="text-base text-gray-700">Learning when and how to apologize correctly is therefore not just about manners—it’s a powerful tool for achieving successful outcomes in every area of your life.</p>
+                       <div class="mt-4 goodblock-card primary border-l-4 border-dashed">
+                            <p class="text-sm italic font-medium">"By using a heartfelt statement that sacrifices your ego, you restore the respect that was lost."</p>
+                       </div>
+                       <p class="mt-4 text-gray-600 font-semibold text-sm">You've turned a vague concept into a <strong>pragmatic action plan</strong>. Now, put the 5-step checklist to work.</p>
+                   </div>`,
+            },
+        ];
+
+
+        // --- ORIENTATION & INITIALIZATION ---
+
+        // Function to handle navigation
+        function toggleOrientation() {
+            const phoneScreen = document.getElementById('phone-screen');
+            const mainContent = document.querySelector('main');
+            
+            // FIX 1: Use mobileFrame state (dimensions) to determine current orientation.
+            const isCurrentlyLandscape = mobileFrame.classList.contains('landscape-mode');
+            
+            // 1. Trigger the 3D flip animation to the back plate immediately (0ms)
+            // This starts the 0.6s transition to 180deg
+            // We always ADD the class to show the back plate first, regardless of direction.
+            phoneFlipper.classList.add('rotated');
+            
+            // 2. Schedule the dimension swap and flip back after the pause (600ms + 500ms pause)
+            const pauseDuration = 500; // The duration to pause on the back plate
+            const flipDuration = 600; // Must match the CSS transition duration
+            
+            // Total time to reach and hold the back plate + the final flip back to the screen
+            setTimeout(() => {
+                // A. Swap dimensions instantly (this happens while the back plate is facing us)
+                // If it was Landscape, we remove the class (go to Portrait). If not, we add the class (go to Landscape).
+                mobileFrame.classList.toggle('landscape-mode', !isCurrentlyLandscape);
+                
+                // B. Initiate the flip back to the screen face (0deg)
+                phoneFlipper.classList.remove('rotated'); 
+                
+                // C. Schedule the rendering/layout update when the final flip completes
+                setTimeout(() => {
+                    // FIX 2 & 3: Use the frame's new state to correctly apply internal layout/sidebar logic.
+                    const isNowLandscape = mobileFrame.classList.contains('landscape-mode');
+                    
+                    phoneScreen.classList.toggle('landscape-mode', isNowLandscape);
+
+                    // Toggle flex direction on the main application container
+                    courseApp.classList.toggle('flex-col', !isNowLandscape); 
+                    courseApp.classList.toggle('flex-row', isNowLandscape);  
+
+                    // 3. Update Icons and Titles (L <-> P swap)
+                    const newIcon = isNowLandscape ? 'fa-mobile-screen' : 'fa-mobile-screen-button';
+                    const oldIcon = isNowLandscape ? 'fa-mobile-screen-button' : 'fa-mobile-screen';
+                    const newTitle = isNowLandscape ? 'Switch to Portrait' : 'Switch to Landscape';
+
+                    orientationIcon.classList.remove('fa-mobile-screen', 'fa-mobile-screen-button');
+                    orientationIcon.classList.add(newIcon);
+                    orientationButton.title = newTitle;
+
+                    lSidebarOrientationIcon.classList.remove('fa-mobile-screen', 'fa-mobile-screen-button');
+                    lSidebarOrientationIcon.classList.add(newIcon);
+                    lSidebarOrientationButton.title = newTitle;
+
+                    // 4. Adjust Main Content Layout for Flex
+                    mainContent.classList.toggle('h-full', isNowLandscape);
+                    
+                    // 5. Re-render the current step
+                    renderStep();
+                    
+                }, flipDuration); // Wait for the 0.6s transition to complete (flip from 180 back to 0)
+
+            }, flipDuration + pauseDuration); // Total time to reach and hold the back plate
+
+        }
+        window.toggleOrientation = toggleOrientation; 
+
+        // --- Navigation Menu Functions ---
+        
+        function toggleNavigationMenu() {
+            const modal = document.getElementById('navigation-modal');
+            const panel = document.getElementById('navigation-panel');
+            
+            if (modal.classList.contains('hidden')) {
+                renderNavigationMenu();
+                modal.classList.remove('hidden');
+                // document.body.style.overflow = 'hidden'; // Removed as per guidance
+
+                setTimeout(() => {
+                    panel.classList.remove('translate-x-full');
+                }, 10);
+            } else {
+                panel.classList.add('translate-x-full');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    // document.body.style.overflow = 'auto'; // Removed as per guidance
+                }, 300);
+            }
+        }
+        
+        function goToStep(index) {
+            currentStep = index;
+            renderStep();
+            toggleNavigationMenu();
+        }
+
+        function renderNavigationMenu() {
+            const topicList = document.getElementById('topic-list');
+            topicList.innerHTML = '';
+
+            courseSteps.forEach((step, index) => {
+                let menuTitle = step.title || (index === 0 ? "0. Welcome & Start" : "Conclusion & Restart");
+                let isSpecial = (index === 0 || index === courseSteps.length - 1);
+                
+                const style = isSpecial ? 'font-bold text-sm' : 'text-sm';
+                const color = currentStep === index ? 'var(--brand-primary)' : 'var(--text-primary)';
+                const weight = currentStep === index ? 'font-extrabold' : 'font-semibold';
+
+                const listItem = document.createElement('button');
+                listItem.className = `w-full text-left p-2 rounded-lg hover:bg-gray-100 transition-colors ${style}`;
+                
+                listItem.innerHTML = `<span class="${weight}" style="color: ${color}">${index}. ${menuTitle}</span>`;
+                listItem.onclick = () => goToStep(index);
+
+                topicList.appendChild(listItem);
+            });
+        }
+
+        // --- Image Modal Functions (unused but kept for future proofing) ---
+        
+        function openImageModal(src) {
+            const modal = document.getElementById('image-modal');
+            const modalImage = document.getElementById('modal-image-content');
+            modalImage.src = src;
+            modal.classList.remove('hidden');
+            // document.body.style.overflow = 'hidden'; // Removed as per guidance
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('image-modal');
+            modal.classList.add('hidden');
+            // document.body.style.overflow = 'auto'; // Removed as per guidance
+        }
+
+
+        // Initial setup to ensure correct flex direction on load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set the default portrait view layout
+            courseApp.classList.add('flex-col');
+            renderStep();
+        });
+    </script>
+</body>
+</html>
